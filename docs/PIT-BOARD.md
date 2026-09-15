@@ -85,7 +85,7 @@ Existing base to start from: two paying clients (HMR, Bottima) and the "Prospect
 4. Send for real. Screenshot the first three boards for the site and social.
 
 **Week 2: make it buyable**
-5. In GHL, create the product "Pit Board" with three recurring prices ($97, $247, $497) and payment links. Put the links in `PITBOARD_CHECKOUT_*`.
+5. Done on 2026-09-15: the product "Pit Board" (id `6aa8b97db365711d70cbe77b`, hidden from the store) exists in the Project Driver sub-account with recurring prices Board $97, Crew $247 and Pro $497. Create a payment link for each price and put the links in `PITBOARD_CHECKOUT_*`, then set `availableInStore` on.
 6. Workflow "PD | PITBOARD | WF01 | Signup": trigger on tag `pitboard-signup`; SMS from Omar within 5 minutes ("Got your Pit Board request for {{contact.company_name}}. Want the 15-min connect call today or tomorrow?"); create opportunity in Sales pipeline; 2-day and 5-day follow-ups; internal notification.
 7. Workflow "PD | PITBOARD | WF02 | Onboarded": trigger on tag `pitboard-active`; welcome email with what to expect at 7 AM; day-7 check-in text ("Score this week?"); day-30 review request.
 8. Add a "Pit Board" line to the Supported and Fully Managed plan descriptions (it is included there) and a $97 add-on to Self-Managed.
