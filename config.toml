@@ -1,4 +1,20 @@
-baseURL = 'http://hugo-quickstart-template.netlify.com'
+baseURL = 'https://pitboard.project-driver.com/'
 languageCode = 'en-us'
-title = 'Netlify + Hugo Quickstart'
-theme = 'netlify-basic'
+title = 'Pit Board by Project Driver'
+theme = 'pitboard'
+enableRobotsTXT = true
+
+[params]
+  tagline = 'Your business on one board, every morning at 7.'
+  description = 'Pit Board is a daily 7 AM text and email that shows a home-service owner yesterday’s calls, missed calls, bookings and the money still on the table, with one-tap links to fix it. Built on the GoHighLevel system Project Driver installs.'
+  company = 'Project Driver'
+  companyUrl = 'https://project-driver.com/'
+  phone = '754-315-4467'
+  smsNumber = '754-315-4472'
+  email = 'hello@project-driver.com'
+  address = '101 SE 3rd Ave Ste 1500, Fort Lauderdale, FL 33301'
+  bookUrl = 'https://project-driver.com/book-a-call'
+  sendHour = '7:00 AM'
+
+[markup.goldmark.renderer]
+  unsafe = true

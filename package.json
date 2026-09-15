@@ -1,4 +1,14 @@
 {
+  "name": "pitboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pit Board by Project Driver: a daily 7 AM scoreboard for home-service owners, built on GoHighLevel.",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "build": "hugo --minify",
+    "dev": "hugo server -D",
+    "preview:board": "node scripts/preview.js"
+  },
   "dependencies": {
     "cypress": "^10.3.1"
   }

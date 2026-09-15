@@ -1,135 +1,73 @@
-[![hugo](https://user-images.githubusercontent.com/43764894/223559747-e9d7f19d-91bf-46a9-a0cb-8d6a40d3cfa3.png)](https://ntl.fyi/3P9w1mr)
+# Pit Board by Project Driver
 
-# Hugo Quickstart Template   
+**Your business on one board, every morning at 7.**
 
-This is a bare-bones Hugo project that has everything you need to quickly deploy it to [Netlify](https://netlify.com). 
+Pit Board is a daily 7 AM text and email for home-service owners (HVAC, plumbing, roofing, and any trade that lives on the phone). It shows yesterday's calls, the ones that were missed, which of those got a text back, new leads by source, what got booked, a response score, today's lineup, and the money still on the table with a one-tap link to fix each item.
 
-Hate reading, here's a video: https://youtu.be/t-tsRxxYdpk
+It is built on the GoHighLevel (GHL) sub-account Project Driver already installs for clients. Nothing new to log into. The board is sent from the owner's own number and email.
 
-Love reading, here's blog post: https://www.netlify.com/blog/deploy-your-hugo-app-quick/
+This repository is the whole product:
 
-## Table of Contents:
+| Part | Where |
+|---|---|
+| Marketing site (Hugo, Netlify) | `content/`, `themes/pitboard/` |
+| Daily engine (scheduled Netlify function) | `netlify/functions/pitboard-daily.js` |
+| GHL client, board logic, renderers | `netlify/functions/lib/` |
+| Signup API (posts leads into Project Driver's GHL) | `netlify/functions/pitboard-signup.js` |
+| Sample/live board API | `netlify/functions/pitboard-board.js` |
+| Manual run / dry run API | `netlify/functions/pitboard-run.js` |
+| Unit tests (node:test, no dependencies) | `test/` |
+| Product spec, pricing math, launch plan | `docs/PIT-BOARD.md` |
 
-- [Quick Setup + Deploy Option](#quick-setup--deploy-option)
-- [Regular Setup](#regular-setup)
-  - [Cloning + Install Packages](#1-cloning--install-packages)
-  - [Deploying](#2-deploying)
-- [Styling](#styling)
-  - [Notes on Styling](#notes-on-styling)
-  - [Remove Styling](#remove-styling)
-- [Hugo + Netlify Resources](#hugo--netlify-resources)
-- [Testing](#testing)
-  - [Included Default Testing](#included-default-testing)
-  - [Removing Renovate](#removing-renovate)
-  - [Removing Cypress](#removing-cypress)
-- [Want to learn more?](#want-to-learn-more)
-
-## Quick Setup + Deploy Option
-
-Click this button and it will help you create a new repo, create a new Netlify project, and deploy!
-
-[![Deploy to Netlify Button](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/netlify-templates/hugo-quickstart)
-
-## Regular Setup
-
- ### 1. Cloning + Running Locally
-
-  - Clone this repo with one of these options:
-
-    - Click the 'Use this template' button at the top of the page
-    - Or via the command line `git clone https://github.com/netlify-templates/hugo-quickstart`
-
- - Start the Hugo sever & check it out:
-
-   - `hugo server -D`
-   - go to [http://localhost:1313/](http://localhost:1313/)
-
-  > Alternatively, you can run this locally with [the Netlify CLI](https://docs.netlify.com/cli/get-started/)'s by running the `netlify dev` command for more options like receiving a live preview to share (`netlify dev --live`) and the ability to test [Netlify Functions](https://www.netlify.com/products/functions) and [redirects](https://docs.netlify.com/routing/redirects/). 
-
-  ### 2. Deploying
-  - Install the Netlify CLI globally `npm install netlify-cli -g`
-    
-  - Run `hugo`
-
-  - Then use the `netlify deploy` for a deploy preview link or `netlify deploy --prod` to deploy to production
-
-  Here are a few other ways you can deploy this template:
-    
-  - Use the Netlify CLI's create from template command `netlify sites:create-template hugo-quickstart` which will create a repo, Netlify project, and deploy it
-    
-  - If you want to utilize continuous deployment through GitHub webhooks, run the Netlify command `netlify init` to create a new project based on your repo or `netlify link` to connect your repo to an existing project
-
-## Styling
-
-We've added some modern styling to this template using Sass within an external stylesheet, this will allow you to easily remove our styling and add in your own. 
-
-If you decide that you want to keep our styling you can review our style notes below. 
-
-### Notes on Styling
-
-The variables below give you the ability to change the gradient colors of the blobs and are interpolated into the URL string of the background-img within the body. 
-
-```css
-// Controls the blob blur gradient colors within the main tag's svg
---top-right-blur-1: #2ebc92;
---top-right-blur-2: #ecbb50;
---bttm-left-blur-1: #ff3e89;
---bttm-left-blur-2: #0095cc;
-```
-
-## Remove Styling
-
-If you decide that our styling is not for you, all you'll need to do is remove the [demo-styling.css](https://github.com/netlify-templates/hugo-quickstart/blob/main/themes/netlify-basic/static/css/demo-styling.css) file. 
-
-## Hugo + Netlify Resources
-
-Here are some resources to help you on your Hugo + Netlify coding fun!
-
-- [Hugo on Netlify Integration Page](https://ntl.fyi/3P9w1mr)
-
-
-Hope this template helps :) Happy coding 👩🏻‍💻!
-
----
-
-## Testing
-
-### Included Default Testing
-
-We’ve included some tooling that helps us maintain these templates. This template currently uses:
-
-- [Renovate](https://www.mend.io/free-developer-tools/renovate/) - to regularly update our dependencies
-- [Cypress](https://www.cypress.io/) - to run tests against how the template runs in the browser
-- [Cypress Netlify Build Plugin](https://github.com/cypress-io/netlify-plugin-cypress) - to run our tests during our build process
-
-If your team is not interested in this tooling, you can remove them with ease!
-
-### Removing Renovate
-
-In order to keep our project up-to-date with dependencies we use a tool called [Renovate](https://github.com/marketplace/renovate). If you’re not interested in this tooling, delete the `renovate.json` file and commit that onto your main branch.
-
-### Removing Cypress
-
-For our testing, we use [Cypress](https://www.cypress.io/) for end-to-end testing. This makes sure that we can validate that our templates are rendering and displaying as we’d expect. By default, we have Cypress not generate deploy links if our tests don’t pass. If you’d like to keep Cypress and still generate the deploy links, go into your `netlify.toml` and delete the plugin configuration lines:
-
-```diff
-[[plugins]]
-  package = "netlify-plugin-cypress"
--  [plugins.inputs.postBuild]
--    enable = true
--
--  [plugins.inputs]
--    enable = false 
-```
-
-If you’d like to remove the `netlify-plugin-cypress` build plugin entirely, you’d need to delete the entire block above instead. And then make sure sure to remove the package from the dependencies using:
+## Run it locally
 
 ```bash
-npm uninstall -D netlify-plugin-cypress
+npm test                      # 27 unit tests, no network
+hugo server -D                # site at http://localhost:1313
+node scripts/preview.js       # sample board as SMS and plain text
+node scripts/preview.js --html > board.html   # the email
 ```
 
-And lastly if you’d like to remove Cypress entirely, delete the entire `cypress` folder and the `cypress.config.ts` file. Then remove the dependency using:
+To preview a **live** board for a real account without sending anything:
 
 ```bash
-npm uninstall cypress
+PITBOARD_ACCOUNTS='[{"id":"acme","name":"Acme Plumbing","locationId":"...","token":"...","ownerContactId":"...","timeZone":"America/New_York"}]' \
+node scripts/preview.js --live acme
 ```
+
+## Deploy (Netlify)
+
+`netlify.toml` builds the site with Hugo, bundles the functions with esbuild, and maps `/api/*` to the functions. `pitboard-daily` runs on the cron in its `config.schedule` (11:00 UTC, which is 7 AM Eastern during daylight time).
+
+Environment variables:
+
+| Variable | Purpose |
+|---|---|
+| `PITBOARD_ACCOUNTS` | JSON array (or base64 of one) of subscriber accounts. Schema in `netlify/functions/lib/accounts.js`. |
+| `PITBOARD_ADMIN_KEY` | Secret for `POST /api/run` (manual send or dry run). |
+| `PITBOARD_PREVIEW_KEY` | Secret that lets you open any live board at `/api/board?a=<id>&key=...`. |
+| `PD_GHL_TOKEN`, `PD_GHL_LOCATION_ID` | Project Driver's own GHL location, where site signups land as contacts tagged `pitboard-signup`. |
+| `PITBOARD_CHECKOUT_BOARD` / `_CREW` / `_PRO` | Where each plan's signup is sent next (GHL payment links). Falls back to the book-a-call page. |
+| `PITBOARD_AGENCY_CALL_URL` | Where agency inquiries are sent. |
+| `PITBOARD_EMAIL_FROM` | Optional default from-address for the email board. |
+
+Each subscriber needs a GHL **Private Integration** token for their sub-account with these scopes: `conversations.readonly`, `conversations/message.readonly`, `conversations/message.write`, `contacts.readonly`, `calendars.readonly`, `calendars/events.readonly`, `opportunities.readonly`, `invoices.readonly`.
+
+## Manual send and dry run
+
+```bash
+curl -X POST https://pitboard.project-driver.com/api/run \
+  -H "x-pitboard-key: $PITBOARD_ADMIN_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"accountId":"acme","dryRun":true}'
+```
+
+Drop `dryRun` to send for real. Omit `accountId` to run every active account.
+
+## Tests
+
+`npm test` covers the time-zone windows (including a DST change), every board rule (missed-call recovery, waiting replies, stale estimates, unpaid invoices, score, nudges), the SMS length budget, HTML escaping, the account registry, the runner against a mocked GHL API, and the three HTTP functions. `cypress/e2e/basic.cy.js` smoke-tests the built site on Netlify.
+
+## License
+
+MIT, see `LICENSE`.

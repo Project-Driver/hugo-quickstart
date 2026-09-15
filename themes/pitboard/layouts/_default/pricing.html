@@ -1,0 +1,17 @@
+{{ define "main" }}
+<section class="section">
+  <div class="wrap">
+    <h1>{{ .Title }}</h1>
+    <div class="prose">{{ .Content }}</div>
+    {{ partial "pricing.html" . }}
+    <h2 class="mt">What each plan is for</h2>
+    <div class="cards3">
+      <article><h3>Board</h3><p>You have a working GoHighLevel account, someone in-house watches the inbox, and you want the scoreboard and the list. Self-serve. If the system was built by somebody else we will still connect it, as long as it captures calls.</p></article>
+      <article><h3>Crew</h3><p>You are busy and still losing jobs. We install missed-call text-back if it is not there, then every weekday a person on our side works the "money on the table" list: texts the missed calls, answers the waiting customers in your voice, nudges the estimates, chases the invoices. You see it all on the board.</p></article>
+      <article><h3>Pro</h3><p>You want the phone answered every time, including after hours, and proof it is happening. Maya, the AI receptionist Project Driver builds on your business, picks up what you cannot and books straight onto the calendar. The board shows exactly what she did.</p></article>
+    </div>
+    <h2 class="mt">Questions</h2>
+    <div class="narrow">{{ partial "faq.html" . }}</div>
+  </div>
+</section>
+{{ end }}

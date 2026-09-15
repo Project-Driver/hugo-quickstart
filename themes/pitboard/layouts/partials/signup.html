@@ -1,0 +1,28 @@
+<form class="signup" id="signup" method="post" action="/api/signup" novalidate>
+  <div class="grid2">
+    <label>Your name<input name="name" required autocomplete="name" placeholder="Omar Ramos"></label>
+    <label>Business<input name="business" required autocomplete="organization" placeholder="Coastal Air & Heat"></label>
+    <label>Email<input name="email" type="email" autocomplete="email" placeholder="you@company.com"></label>
+    <label>Mobile (where the 7 AM text goes)<input name="phone" type="tel" autocomplete="tel" placeholder="(754) 555-0100"></label>
+    <label>Trade
+      <select name="trade">
+        <option>HVAC</option><option>Plumbing</option><option>Roofing</option><option>Electrical</option>
+        <option>Garage doors</option><option>Pool service</option><option>Pest control</option><option>Landscaping</option>
+        <option>Cleaning</option><option>Other home service</option><option>Not home services</option>
+      </select>
+    </label>
+    <label>Already on GoHighLevel?
+      <select name="ghl"><option value="yes">Yes</option><option value="no">No / not sure</option></select>
+    </label>
+  </div>
+  <fieldset class="planpick">
+    <legend>Plan</legend>
+    <label><input type="radio" name="plan" value="board"> Board · $97</label>
+    <label><input type="radio" name="plan" value="crew" checked> Crew · $247</label>
+    <label><input type="radio" name="plan" value="pro"> Pro · $497</label>
+  </fieldset>
+  <label class="hp" aria-hidden="true">Website<input name="website" tabindex="-1" autocomplete="off"></label>
+  <button class="btn btn-yellow btn-lg" type="submit">Get my first board tomorrow morning</button>
+  <p class="muted small">No card on this form. Next step is a 15-minute connect call or checkout, your choice. We text you once to confirm.</p>
+  <p class="form-msg" role="status" aria-live="polite"></p>
+</form>

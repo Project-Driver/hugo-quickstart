@@ -1,0 +1,16 @@
+{{ define "main" }}
+<section class="section">
+  <div class="wrap">
+    <h1>{{ .Title }}</h1>
+    <div class="prose">{{ .Content }}</div>
+    {{ partial "board.html" . }}
+    <h2 class="mt">The 7 AM text</h2>
+    <p class="lead-sm">Three segments. No links in the text; the email carries them so the text stays readable at a glance.</p>
+    <div class="phone wide">
+      <div class="phone-bar"><span>7:00 AM</span><span>{{ .Site.Params.company }}</span></div>
+      <pre class="sms" id="sms-sample">Loading the text version…</pre>
+    </div>
+    <p class="center"><a class="btn btn-yellow btn-lg" href="/start/">Get mine tomorrow morning</a></p>
+  </div>
+</section>
+{{ end }}

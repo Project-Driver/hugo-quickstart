@@ -3,3 +3,11 @@
 
 # Package Files
 node_modules/
+
+# Hugo output
+public/
+resources/
+
+# Local secrets
+.env
+accounts.local.json

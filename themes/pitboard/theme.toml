@@ -1,0 +1,4 @@
+name = "Pit Board"
+license = "MIT"
+description = "Landing site for Pit Board by Project Driver"
+min_version = "0.101.0"

@@ -1,0 +1,80 @@
+{{ define "main" }}
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <p class="eyebrow">For HVAC, plumbing, roofing and every other trade that lives on the phone</p>
+      <h1>Your business on one board, <em>every morning at 7.</em></h1>
+      <p class="lead">Yesterday's calls, the ones you missed, who got a text back, what got booked, and the money still sitting on the table with a link to fix each one. One text. One email. Before the first job.</p>
+      <div class="cta-row">
+        <a class="btn btn-yellow btn-lg" href="/start/">Get my first board tomorrow</a>
+        <a class="btn btn-ghost btn-lg" href="/sample/">See a full sample</a>
+      </div>
+      <p class="muted small">Built on the GoHighLevel system {{ .Site.Params.company }} installs. From $97/month. No new app to open.</p>
+    </div>
+    <div class="hero-board">
+      <div class="phone">
+        <div class="phone-bar"><span>7:00 AM</span><span>{{ .Site.Params.company }}</span></div>
+        <pre class="sms">PIT BOARD · Coastal Air & Heat · Monday
+Calls 14 (+3 vs avg) · Missed 4 (3 texted back)
+New leads 6 · Booked 5
+Reply time 4m · Score 84/100
+Today: 4 jobs, first at 8:00a
+On the table: 5 · Missed call, no text back: (954) 555-0142
+Do this: Text back the missed call nobody answered. Every hour lowers the odds they still need you.</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <h2>The board</h2>
+    <p class="lead-sm">This is the email. The text is the top of it. Every number is pulled from your own phone system, inbox and calendar, not typed in by anyone.</p>
+    {{ partial "board.html" . }}
+  </div>
+</section>
+
+<section class="section alt">
+  <div class="wrap">
+    <h2>Why owners read it every day</h2>
+    <div class="cards3">
+      <article><h3>It answers the question you already ask</h3><p>"Did we miss anything yesterday?" You check the call log, the inbox, the calendar, then the bank. Four apps, ten minutes, usually skipped. Now it is one screen at a red light.</p></article>
+      <article><h3>It names the money</h3><p>A missed call with no text back. A customer who asked a question at 6 PM and got silence. An estimate that has sat for five days. An invoice nobody chased. Each one is a real person and a real number, with a link.</p></article>
+      <article><h3>It keeps score</h3><p>One response score, zero to a hundred. You watch it the way you watch the truck's fuel light. When it slips, you know before the reviews do.</p></article>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <h2>How it starts</h2>
+    <ol class="steps">
+      <li><b>1</b><div><strong>Connect.</strong> Fifteen minutes on a call. We plug Pit Board into the GoHighLevel account you already have, or we install one (Crew and Pro). Nothing to download.</div></li>
+      <li><b>2</b><div><strong>Tomorrow, 7 AM.</strong> First board arrives by text and email. Yours, your office manager's, whoever runs the phones.</div></li>
+      <li><b>3</b><div><strong>Work the list.</strong> Tap a name, the conversation opens on your phone. On Crew, we work it for you every weekday and you just watch the score climb.</div></li>
+    </ol>
+  </div>
+</section>
+
+<section class="section alt" id="pricing">
+  <div class="wrap">
+    <h2>Pricing</h2>
+    <p class="lead-sm">Month to month. The first board arrives before the first invoice.</p>
+    {{ partial "pricing.html" . }}
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap narrow">
+    <h2>Questions owners ask</h2>
+    {{ partial "faq.html" . }}
+  </div>
+</section>
+
+<section class="section alt" id="start">
+  <div class="wrap narrow">
+    <h2>Get your first board tomorrow morning</h2>
+    {{ partial "signup.html" . }}
+  </div>
+</section>
+{{ end }}

@@ -1,0 +1,35 @@
+{{ define "main" }}
+<section class="section">
+  <div class="wrap narrow prose">
+    <h1>{{ .Title }}</h1>
+    {{ .Content }}
+  </div>
+</section>
+<section class="section alt">
+  <div class="wrap">
+    <h2>What your clients get</h2>
+    {{ partial "board.html" . }}
+  </div>
+</section>
+<section class="section">
+  <div class="wrap narrow">
+    <h2>Talk to us about white-label</h2>
+    <form class="signup" id="signup" method="post" action="/api/signup" novalidate>
+      <input type="hidden" name="plan" value="agency">
+      <input type="hidden" name="ghl" value="yes">
+      <div class="grid2">
+        <label>Your name<input name="name" required autocomplete="name"></label>
+        <label>Agency<input name="business" required autocomplete="organization"></label>
+        <label>Email<input name="email" type="email" required autocomplete="email"></label>
+        <label>Mobile<input name="phone" type="tel" autocomplete="tel"></label>
+        <label>Sub-accounts you run
+          <select name="trade"><option value="agency-1-10">1 to 10</option><option value="agency-11-50">11 to 50</option><option value="agency-51-plus">51 or more</option></select>
+        </label>
+      </div>
+      <label class="hp" aria-hidden="true">Website<input name="website" tabindex="-1" autocomplete="off"></label>
+      <button class="btn btn-yellow btn-lg" type="submit">Book the agency call</button>
+      <p class="form-msg" role="status" aria-live="polite"></p>
+    </form>
+  </div>
+</section>
+{{ end }}

@@ -1,0 +1,38 @@
+{{/* Renders the sample board from data/sample_board.json. Pass the site context. */}}
+{{ $b := .Site.Data.sample_board }}
+<section class="board" aria-label="Sample Pit Board for {{ $b.account.name }}">
+  <header class="board-head">
+    <span class="brand">PIT<span>BOARD</span></span>
+    <span class="board-biz">{{ $b.account.name }}</span>
+  </header>
+  <div class="board-label">Yesterday · {{ $b.dateLabel }}</div>
+  <div class="stats">
+    <div class="stat"><b>{{ $b.lap.callsIn }}</b><span>Calls in</span><small>avg {{ $b.baseline.callsPerDay }}/day</small></div>
+    <div class="stat"><b>{{ $b.lap.missed }}</b><span>Missed</span><small>{{ $b.lap.recovered }} texted back</small></div>
+    <div class="stat"><b>{{ $b.lap.newLeads }}</b><span>New leads</span><small>{{ range $k, $v := $b.lap.leadsBySource }}{{ $k }} {{ $v }} · {{ end }}</small></div>
+    <div class="stat"><b>{{ $b.lap.booked }}</b><span>Booked</span><small>reply in {{ $b.lap.medianReplyMinutes }} min</small></div>
+  </div>
+  <div class="score"><span>Response score</span><b class="{{ if ge $b.score 80 }}good{{ else if ge $b.score 50 }}warn{{ else }}bad{{ end }}">{{ $b.score }}<i>/100</i></b></div>
+  <div class="dothis"><span>Do this today</span><p>{{ $b.doThis }}</p></div>
+  <div class="board-label">Money on the table · {{ $b.moneyOnTheTableTotal }}{{ if $b.unpaidTotal }} · ${{ lang.NumFmt 0 $b.unpaidTotal }} unpaid{{ end }}</div>
+  <ul class="table">
+    {{ range $b.moneyOnTheTable }}
+    <li class="row kind-{{ .kind }}">
+      <i class="dot"></i>
+      <div class="row-body">
+        <div class="row-label">{{ .label }} · {{ .age }}</div>
+        <div class="row-name">{{ .name }}</div>
+        {{ with .detail }}<div class="row-detail">{{ . }}</div>{{ end }}
+      </div>
+      <a class="open" href="{{ .link }}" aria-label="Open {{ .name }}">Open</a>
+    </li>
+    {{ end }}
+  </ul>
+  <div class="board-label">Today · {{ $b.todayLabel }} · {{ $b.today.count }} on the calendar</div>
+  <ul class="lineup">
+    {{ range $b.today.appointments }}
+    <li><b>{{ .time }}</b><div><strong>{{ .name }}</strong>{{ with .title }} <span class="muted">· {{ . }}</span>{{ end }}{{ with .address }}<div class="muted small">{{ . }}</div>{{ end }}</div></li>
+    {{ end }}
+  </ul>
+  <footer class="board-foot">Sent 7:00 AM from your own number and email · <a href="/api/board" target="_blank" rel="noopener">email version</a> · <a href="/api/board?format=sms" target="_blank" rel="noopener">text version</a></footer>
+</section>
