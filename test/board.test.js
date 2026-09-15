@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { composeBoard, isMissed, bucketSource, relativeAge } = require('../netlify/functions/lib/board');
+const { composeBoard, isMissed, bucketSource, relativeAge, plainPreview } = require('../netlify/functions/lib/board');
 const { reportingWindow } = require('../netlify/functions/lib/time');
 const fx = require('./fixtures');
 
@@ -88,6 +88,12 @@ test('do-this nudge follows priority order', () => {
   assert.match(build({ calls: [], waiting: [], opportunities: [], invoices: [] }).doThis, /Board is clean/);
 });
 
+test('conversations from spam-tagged contacts never reach the table', () => {
+  const spam = { id: 'conv-spam', contactName: 'Robo', lastMessageDate: '2026-09-13T08:00:00Z', tags: ['spam likely'] };
+  const b = build({ waiting: [...fx.waiting, spam] });
+  assert.ok(!b.moneyOnTheTable.some((t) => t.name === 'Robo'));
+});
+
 test('table is capped at six items but the total is preserved', () => {
   const many = Array.from({ length: 9 }, (_, i) => ({ id: `conv-x${i}`, contactName: `P${i}`, lastMessageDate: '2026-09-13T08:00:00Z' }));
   const b = build({ waiting: many });
@@ -105,4 +111,5 @@ test('helpers', () => {
   assert.equal(relativeAge(5 * 60000), '5m');
   assert.equal(relativeAge(3 * 3600000), '3h');
   assert.equal(relativeAge(50 * 3600000), '2d');
+  assert.equal(plainPreview('Hi INTERMEDIA,<br><br>We received your &amp; call.<p>Team</p>'), 'Hi INTERMEDIA, We received your & call. Team');
 });

@@ -98,7 +98,7 @@ function toHtml(board, { boardUrl, manageUrl, brand = 'Project Driver' } = {}) {
           ${a.address ? `<div style="color:#9aa0a6;font-size:12px">${esc(a.address)}</div>` : ''}
         </td>
       </tr>`).join('')
-    : `<tr><td style="padding:8px 0;font:14px -apple-system,Segoe UI,Helvetica,Arial,sans-serif;color:#9aa0a6">Nothing on the calendar yet. Good day to chase the list below.</td></tr>`;
+    : `<tr><td style="padding:8px 0;font:14px -apple-system,Segoe UI,Helvetica,Arial,sans-serif;color:#9aa0a6">Nothing on the calendar yet. Good day to clear the list above.</td></tr>`;
 
   const tableRows = board.moneyOnTheTable.length
     ? board.moneyOnTheTable.map((t) => `

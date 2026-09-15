@@ -41,6 +41,15 @@ function displayName(rec) {
     || rec.phone || rec.email || 'Unknown caller';
 }
 
+/** Message previews from GHL can carry HTML; the board is plain text. */
+function plainPreview(s, max = 80) {
+  return String(s || '')
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ').trim().slice(0, max);
+}
+
 function relativeAge(ms) {
   const h = Math.floor(ms / 3600000);
   if (h < 1) return `${Math.max(1, Math.floor(ms / 60000))}m`;
@@ -187,6 +196,7 @@ function composeBoard(input) {
   }
 
   for (const conv of waiting) {
+    if ((conv.tags || []).some((t) => /spam/i.test(t))) continue;
     const last = new Date(conv.lastMessageDate || conv.dateUpdated || 0).getTime();
     const age = nowMs - last;
     if (!last || age < QUIET_LEAD_MIN_AGE_MS || age > QUIET_LEAD_MAX_AGE_MS) continue;
@@ -194,7 +204,7 @@ function composeBoard(input) {
       kind: 'waiting',
       label: 'Waiting on a reply',
       name: displayName(conv),
-      detail: (conv.lastMessageBody || '').replace(/\s+/g, ' ').slice(0, 80),
+      detail: plainPreview(conv.lastMessageBody),
       ageMs: age,
       link: conversationLink(account, conv.id),
       priority: age > 24 * 3600000 ? 1 : 2,
@@ -296,4 +306,4 @@ function composeBoard(input) {
   };
 }
 
-module.exports = { composeBoard, isMissed, bucketSource, relativeAge, contactLink, conversationLink };
+module.exports = { composeBoard, isMissed, bucketSource, relativeAge, plainPreview, contactLink, conversationLink };
