@@ -20,7 +20,7 @@
   }
 
   // Signup forms post JSON to /api/signup and follow the returned next step.
-  document.querySelectorAll('form.signup').forEach(function (form) {
+  document.querySelectorAll('form.signup[action="/api/signup"]').forEach(function (form) {
     form.addEventListener('submit', function (ev) {
       ev.preventDefault();
       var msg = form.querySelector('.form-msg');

@@ -1,0 +1,91 @@
+{{ define "main" }}
+<section class="hero td-hero">
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <p class="eyebrow">Instant Teardown · for any home-service website</p>
+      <h1>Find out why the phone is quiet. <em>In about a minute.</em></h1>
+      <p class="lead">Type your website. We crawl it the way a customer and Google see it, run Google's own speed audit, and check the forty things that decide whether someone in your city calls you or the next listing. Score is free. The full report with fixes is $79.</p>
+      <form class="signup td-form" id="td-form" novalidate>
+        <div class="grid2">
+          <label>Your website<input name="url" id="td-url" required inputmode="url" placeholder="coastalair.com"></label>
+          <label>Business name<input name="business" id="td-business" required placeholder="Coastal Air & Heat"></label>
+          <label>City you serve most<input name="city" id="td-city" required placeholder="Fort Lauderdale"></label>
+          <label>Trade
+            <select name="trade" id="td-trade">
+              <option value="hvac">HVAC</option><option value="plumbing">Plumbing</option><option value="roofing">Roofing</option><option value="electrical">Electrical</option>
+              <option value="garage-doors">Garage doors</option><option value="pool">Pool service</option><option value="pest-control">Pest control</option><option value="landscaping">Landscaping</option>
+              <option value="cleaning">Cleaning</option><option value="general-contractor">General contractor</option><option value="other">Other</option>
+            </select>
+          </label>
+          <label>Email (the report goes here)<input name="email" id="td-email" type="email" required placeholder="you@company.com"></label>
+          <label>Mobile (optional)<input name="phone" id="td-phone" type="tel" placeholder="(754) 555-0100"></label>
+        </div>
+        <label class="hp" aria-hidden="true">Website<input name="website" tabindex="-1" autocomplete="off"></label>
+        <button class="btn btn-yellow btn-lg" type="submit" id="td-submit">Scan my site free</button>
+        <p class="form-msg" role="status" aria-live="polite"></p>
+      </form>
+    </div>
+    <div class="hero-board">
+      <div class="td-what">
+        <h3>What gets checked</h3>
+        <ul>
+          <li><b>Speed &amp; mobile</b> Google's Lighthouse audit, server speed, page weight, HTTPS.</li>
+          <li><b>Search</b> Titles, descriptions, headings, sitemap, indexing, service pages, structured data.</li>
+          <li><b>Local &amp; AI search</b> Name, address, phone, hours, Florida license number, LocalBusiness schema, FAQ markup, llms.txt, and where you sit on Google Maps next to competitors.</li>
+          <li><b>Getting the call</b> Tap-to-call, booking path, form length, reviews, emergency and financing mentions, tracking.</li>
+          <li><b>Accessibility</b> Alt text, form labels, heading order, link text, the demand-letter list.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="td-result" hidden>
+  <div class="wrap">
+    <div id="td-progress" class="td-progress">
+      <div class="spinner" aria-hidden="true"></div>
+      <div><strong id="td-progress-title">Crawling your site…</strong><div class="muted small" id="td-progress-sub">Homepage, service pages, contact, robots, sitemap, then Google's speed audit. Usually 30 to 90 seconds.</div></div>
+    </div>
+    <div id="td-free" hidden>
+      <div class="td-score-card">
+        <div class="td-ring"><svg width="140" height="140" viewBox="0 0 140 140" role="img" aria-label="Score"><circle cx="70" cy="70" r="63" fill="none" stroke="#2a2d33" stroke-width="10"/><circle id="td-ring-arc" cx="70" cy="70" r="63" fill="none" stroke="#ffd400" stroke-width="10" stroke-linecap="round" stroke-dasharray="395.8" stroke-dashoffset="395.8" transform="rotate(-90 70 70)"/><text id="td-score" x="50%" y="50%" dy="0.1em" text-anchor="middle" dominant-baseline="middle" font-family="JetBrains Mono, monospace" font-weight="800" font-size="42" fill="#f4f5f7">0</text></svg></div>
+        <div>
+          <div class="eyebrow" id="td-grade">Grade</div>
+          <h2 id="td-biz"></h2>
+          <p class="muted" id="td-meta"></p>
+          <div class="sevrow" id="td-sev"></div>
+        </div>
+      </div>
+      <div class="cats" id="td-cats"></div>
+      <div class="td-teaser" id="td-teaser"></div>
+      <div class="td-unlock">
+        <div class="td-locked">
+          <h3>Inside the full report</h3>
+          <ul id="td-titles"></ul>
+          <p class="muted small">Every finding with what it is costing you, the exact fix, the evidence, and which page. Plus a 30-day plan, Google's speed audit, your Google Maps position next to competitors, and a page-by-page table. Printable.</p>
+        </div>
+        <div class="td-buy">
+          <div class="td-price"><b>$79</b><span>full report, delivered by email in minutes</span></div>
+          <button class="btn btn-yellow btn-lg btn-block" id="td-buy-report">Unlock the full report</button>
+          <div class="td-price alt"><b>$249</b><span>report + 30-minute walkthrough with Omar</span></div>
+          <button class="btn btn-block" id="td-buy-call">Report + call</button>
+          <p class="muted small">Both are credited toward any Project Driver build within 30 days. Secure checkout by Stripe.</p>
+          <p class="form-msg" id="td-buy-msg" role="status" aria-live="polite"></p>
+        </div>
+      </div>
+    </div>
+    <div id="td-failed" hidden class="td-failed"><h3>We could not finish the scan</h3><p id="td-failed-msg"></p><p class="muted">Some sites block crawlers. <a href="tel:754-315-4467">Call 754-315-4467</a> and we will run it by hand.</p></div>
+  </div>
+</section>
+
+<section class="section alt">
+  <div class="wrap">
+    <h2>Why this is worth $79</h2>
+    <div class="cards3">
+      <article><h3>It's the same Teardown we sell for $844</h3><p>Our Diagnostic + Teardown bundle is a person doing this by hand over a week. The instant version runs the same checklist in a minute and hands you the findings in the same order we would.</p></article>
+      <article><h3>Every finding names the money</h3><p>Not "meta description missing." Instead: what a homeowner sees in Google because of it, what it costs you, and the one-line fix, with the evidence so anyone can verify it.</p></article>
+      <article><h3>You can hand it to anyone</h3><p>Your web person, your nephew, or us. The 30-day plan is ordered so week one is all quick fixes. Most owners move the score 15 to 25 points in an afternoon.</p></article>
+    </div>
+  </div>
+</section>
+{{ end }}

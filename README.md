@@ -1,4 +1,11 @@
-# Pit Board by Project Driver
+# Project Driver products: Pit Board and Instant Teardown
+
+Two products in one Hugo + Netlify repo.
+
+- **Instant Teardown** (`/teardown/`): a coin-operated website audit for home-service businesses. Free score in a minute, $79 for the full ranked report with fixes and a 30-day plan, $249 with a call. Stripe checkout, delivery by email through GHL. See `docs/TEARDOWN.md`.
+- **Pit Board** (`/`): a daily 7 AM scoreboard for existing clients built from their GoHighLevel sub-account. See `docs/PIT-BOARD.md`.
+
+## Pit Board
 
 **Your business on one board, every morning at 7.**
 
@@ -16,7 +23,9 @@ This repository is the whole product:
 | Signup API (posts leads into Project Driver's GHL) | `netlify/functions/pitboard-signup.js` |
 | Sample/live board API | `netlify/functions/pitboard-board.js` |
 | Manual run / dry run API | `netlify/functions/pitboard-run.js` |
-| Unit tests (node:test, no dependencies) | `test/` |
+| Teardown scanner, checks, report, Stripe, delivery | `netlify/functions/lib/teardown/` |
+| Teardown endpoints (start, background run, status, checkout, webhook, report) | `netlify/functions/teardown-*.js` |
+| Unit tests (node:test) | `test/` |
 | Product spec, pricing math, launch plan | `docs/PIT-BOARD.md` |
 
 ## Run it locally
@@ -50,6 +59,12 @@ Environment variables:
 | `PITBOARD_CHECKOUT_BOARD` / `_CREW` / `_PRO` | Where each plan's signup is sent next (GHL payment links). Falls back to the book-a-call page. |
 | `PITBOARD_AGENCY_CALL_URL` | Where agency inquiries are sent. |
 | `PITBOARD_EMAIL_FROM` | Optional default from-address for the email board. |
+| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | Teardown checkout and webhook. |
+| `STRIPE_PRICE_TEARDOWN`, `STRIPE_PRICE_TEARDOWN_CALL` | Stripe price ids for $79 and $249. |
+| `PAGESPEED_API_KEY` | Google PageSpeed Insights key (free) for the Lighthouse section. |
+| `SERPAPI_KEY` | Optional. Google Maps competitor lookup. |
+| `TEARDOWN_RUNNER_SECRET` | Random string that guards the background scan runner. |
+| `TEARDOWN_CALL_URL` | Booking link for the $249 plan. |
 
 Each subscriber needs a GHL **Private Integration** token for their sub-account with these scopes: `conversations.readonly`, `conversations/message.readonly`, `conversations/message.write`, `contacts.readonly`, `calendars.readonly`, `calendars/events.readonly`, `opportunities.readonly`, `invoices.readonly`.
 
@@ -66,7 +81,7 @@ Drop `dryRun` to send for real. Omit `accountId` to run every active account.
 
 ## Tests
 
-`npm test` covers the time-zone windows (including a DST change), every board rule (missed-call recovery, waiting replies, stale estimates, unpaid invoices, score, nudges), the SMS length budget, HTML escaping, the account registry, the runner against a mocked GHL API, and the three HTTP functions. `cypress/e2e/basic.cy.js` smoke-tests the built site on Netlify.
+`npm test` runs 44 tests. For Teardown: two fixture websites run through the crawler and every rule, the free/paid projection, Stripe signature verification, checkout, webhook idempotency, delivery, and report gating. For Pit Board it covers the time-zone windows (including a DST change), every board rule (missed-call recovery, waiting replies, stale estimates, unpaid invoices, score, nudges), the SMS length budget, HTML escaping, the account registry, the runner against a mocked GHL API, and the three HTTP functions. `cypress/e2e/basic.cy.js` smoke-tests the built site on Netlify.
 
 ## License
 

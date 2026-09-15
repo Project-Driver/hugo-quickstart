@@ -1,0 +1,17 @@
+{{ define "main" }}
+<section class="section">
+  <div class="wrap narrow" id="td-report-shell">
+    <h1>Opening your report…</h1>
+    <p class="muted">If this page does not move in a few seconds, your email has the permanent link.</p>
+  </div>
+</section>
+<script>
+  (function () {
+    var p = new URLSearchParams(location.search);
+    var id = p.get('id'); var k = p.get('k'); var s = p.get('session_id');
+    if (!id) return;
+    var url = '/api/teardown-report?id=' + encodeURIComponent(id) + (k ? '&k=' + encodeURIComponent(k) : '') + (s ? '&session_id=' + encodeURIComponent(s) : '');
+    location.replace(url);
+  })();
+</script>
+{{ end }}

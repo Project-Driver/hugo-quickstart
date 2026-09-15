@@ -2,7 +2,7 @@
   "name": "pitboard",
   "version": "1.0.0",
   "private": true,
-  "description": "Pit Board by Project Driver: a daily 7 AM scoreboard for home-service owners, built on GoHighLevel.",
+  "description": "Project Driver products: Instant Teardown (self-serve website audit) and Pit Board (daily 7 AM scoreboard), on Hugo + Netlify + GoHighLevel.",
   "scripts": {
     "test": "node --test test/*.test.js",
     "build": "hugo --minify",
@@ -10,6 +10,8 @@
     "preview:board": "node scripts/preview.js"
   },
   "dependencies": {
+    "@netlify/blobs": "^8.1.0",
+    "cheerio": "^1.0.0",
     "cypress": "^10.3.1"
   }
 }

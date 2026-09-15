@@ -11,10 +11,25 @@
   node_bundler = "esbuild"
   included_files = ["data/sample_board.json"]
 
-# Public API for the site: /api/signup, /api/board, /api/daily (protected)
+# Public API. Short names for the Pit Board endpoints, then everything else by function name.
+[[redirects]]
+  from = "/api/signup"
+  to = "/.netlify/functions/pitboard-signup"
+  status = 200
+
+[[redirects]]
+  from = "/api/board"
+  to = "/.netlify/functions/pitboard-board"
+  status = 200
+
+[[redirects]]
+  from = "/api/run"
+  to = "/.netlify/functions/pitboard-run"
+  status = 200
+
 [[redirects]]
   from = "/api/*"
-  to = "/.netlify/functions/pitboard-:splat"
+  to = "/.netlify/functions/:splat"
   status = 200
 
 [[plugins]]
