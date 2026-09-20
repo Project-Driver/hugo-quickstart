@@ -20,7 +20,7 @@ The report is a standalone dark page with "Save as PDF" (print stylesheet). The 
 
 ## What the scanner checks
 
-Forty-five rules in `netlify/functions/lib/teardown/checks.js`, each with a plain-English "what it costs you", the fix, the evidence, the pages, an effort estimate, and the Project Driver product that fixes it. Categories and weights:
+Sixty-nine rules in `netlify/functions/lib/teardown/checks.js`, each with a plain-English "what it costs you", the fix, the evidence, the pages, an effort estimate, and the Project Driver product that fixes it. Run `node scripts/rules.js` to print the current inventory; the count below is generated from the source, so it and the code cannot drift apart. Categories and weights:
 
 | Category | Weight | Examples |
 |---|---|---|
@@ -34,6 +34,12 @@ Scores: each category starts at 100 and loses 30 / 16 / 8 / 3 per critical / hig
 
 Not measured, and the report says so: color contrast, anything behind a login, and call handling (that is what Pit Board and Never Miss a Job are for).
 
+## When the site cannot be read
+
+A scan that cannot load the homepage is marked `blocked`, not `done`. It gets no score, no grade, no report, and checkout refuses it with HTTP 409 so nobody is ever charged for a site we could not read. The blocked reason is written for the owner: a dead address, a 404 homepage, a server error, or, most often, a security plugin or CDN refusing automated visitors.
+
+Because that last case is common on small-business sites, the crawler identifies itself honestly first and, only if that request is refused with a firewall-style status (401, 403, 405, 406, 409, 429, 503), retries the page once with an ordinary Chrome user agent. If both are refused the scan is blocked and says so, including the fact that the same firewall may be blocking search engines.
+
 ## Setup checklist (about an hour)
 
 1. **Stripe.** Create two Products with one-time Prices: "Instant Teardown" $79 and "Instant Teardown + call" $249. Put the price ids in `STRIPE_PRICE_TEARDOWN` and `STRIPE_PRICE_TEARDOWN_CALL`, the secret key in `STRIPE_SECRET_KEY`. Add a webhook endpoint for `checkout.session.completed` pointing at `https://<site>/api/teardown-webhook` and put its signing secret in `STRIPE_WEBHOOK_SECRET`.
@@ -43,9 +49,18 @@ Not measured, and the report says so: color contrast, anything behind a login, a
 5. **Site.** `URL` is set by Netlify automatically. Set `TEARDOWN_RUNNER_SECRET` (any random string) so only the site can start background scans, and `TEARDOWN_CALL_URL` to the Diagnostic booking calendar for the $249 plan.
 6. **Netlify Blobs** is on by default for sites on the current build system; nothing to configure.
 
+## Running a real scan from the command line
+
+```bash
+npm run teardown -- residentialgaragedoorservice.net \
+  --business "Residential Garage Door Service" --city Jupiter --trade garage-doors
+```
+
+It prints the score, the category breakdown and every finding, then writes the full HTML report next to you. `PAGESPEED_API_KEY` and `SERPAPI_KEY` are read from the environment if set. `--out <file>` chooses the report path, `--json <file>` also dumps the raw scan record, and `--allow-private` permits localhost for local testing.
+
 ## Testing without money
 
-- `npm test` runs the whole pipeline against two fixture websites (a neglected one and a good one) plus Stripe signature checks.
+- `npm test` runs 50 tests: the whole pipeline against two fixture websites (a neglected one and a good one), Stripe signature checks, and `test/teardown-live.test.js`, which starts a real HTTP server on loopback and exercises the actual network stack: gzip, 301 redirects, robots, soft 404s, request timeouts, a firewall that blocks the scanner and is retried as a browser, and a site that blocks everything and must end up unsellable.
 - On the deployed site, run a scan; the free result shows without Stripe. To see the paid report for a scan without paying: `/api/teardown-report?id=<id>&key=<PITBOARD_PREVIEW_KEY>`.
 - Stripe test mode works end to end with a test card; the webhook can be sent from the Stripe dashboard.
 

@@ -7,7 +7,9 @@
     "test": "node --test test/*.test.js",
     "build": "hugo --minify",
     "dev": "hugo server -D",
-    "preview:board": "node scripts/preview.js"
+    "preview:board": "node scripts/preview.js",
+    "teardown": "node scripts/teardown.js",
+    "rules": "node scripts/rules.js"
   },
   "dependencies": {
     "@netlify/blobs": "^8.1.0",

@@ -10,6 +10,7 @@ exports.handler = async (event) => {
   if (!id) return { statusCode: 400, body: JSON.stringify({ error: 'id required' }) };
   const record = await getScanStore().get(id);
   if (!record) return { statusCode: 404, body: JSON.stringify({ error: 'unknown scan' }) };
+  // 'blocked' and 'failed' are terminal; only queued/running can go stale.
   // Scans that never got picked up should not spin forever.
   if (record.status === 'queued' && Date.now() - new Date(record.createdAt).getTime() > 3 * 60000) {
     record.status = 'failed'; record.error = 'The scan did not start. Please try again.';

@@ -19,6 +19,9 @@ exports.handler = async (event) => {
   const record = await getScanStore().get(body.id);
   if (!record) return json(404, { error: 'unknown scan' });
   if (record.paid) return json(200, { ok: true, alreadyPaid: true, url: `/teardown/report/?id=${record.id}&k=${record.key}` });
+  if (record.status !== 'done') {
+    return json(409, { error: record.status === 'blocked' ? 'We could not read that site, so there is no report to sell. Nothing has been charged.' : 'The scan has not finished yet.' });
+  }
   const priceId = process.env[PRICE_ENV[plan]];
   const base = (process.env.URL || process.env.PITBOARD_SITE_URL || '').replace(/\/$/, '');
   if (!priceId || !process.env.STRIPE_SECRET_KEY) return json(503, { error: 'Checkout is not configured yet. Call 754-315-4467 and we will run it by hand.' });

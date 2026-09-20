@@ -25,7 +25,8 @@ This repository is the whole product:
 | Manual run / dry run API | `netlify/functions/pitboard-run.js` |
 | Teardown scanner, checks, report, Stripe, delivery | `netlify/functions/lib/teardown/` |
 | Teardown endpoints (start, background run, status, checkout, webhook, report) | `netlify/functions/teardown-*.js` |
-| Unit tests (node:test) | `test/` |
+| Command-line scan runner | `scripts/teardown.js` (`npm run teardown`) |
+| Unit and integration tests (node:test) | `test/` |
 | Product spec, pricing math, launch plan | `docs/PIT-BOARD.md` |
 
 ## Run it locally
@@ -34,6 +35,7 @@ This repository is the whole product:
 npm test                      # 27 unit tests, no network
 hugo server -D                # site at http://localhost:1313
 node scripts/preview.js       # sample board as SMS and plain text
+npm run teardown -- example.com --business "X" --city "Y" --trade hvac
 node scripts/preview.js --html > board.html   # the email
 ```
 
@@ -81,7 +83,7 @@ Drop `dryRun` to send for real. Omit `accountId` to run every active account.
 
 ## Tests
 
-`npm test` runs 44 tests. For Teardown: two fixture websites run through the crawler and every rule, the free/paid projection, Stripe signature verification, checkout, webhook idempotency, delivery, and report gating. For Pit Board it covers the time-zone windows (including a DST change), every board rule (missed-call recovery, waiting replies, stale estimates, unpaid invoices, score, nudges), the SMS length budget, HTML escaping, the account registry, the runner against a mocked GHL API, and the three HTTP functions. `cypress/e2e/basic.cy.js` smoke-tests the built site on Netlify.
+`npm test` runs 50 tests. For Teardown: two fixture websites run through the crawler and every rule, the free/paid projection, Stripe signature verification, checkout, webhook idempotency, delivery, and report gating. For Pit Board it covers the time-zone windows (including a DST change), every board rule (missed-call recovery, waiting replies, stale estimates, unpaid invoices, score, nudges), the SMS length budget, HTML escaping, the account registry, the runner against a mocked GHL API, and the three HTTP functions. `cypress/e2e/basic.cy.js` smoke-tests the built site on Netlify.
 
 ## License
 

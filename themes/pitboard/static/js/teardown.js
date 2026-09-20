@@ -30,13 +30,17 @@
     $('td-result').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  function fail(msg) { show('td-progress', false); show('td-failed', true); $('td-failed-msg').textContent = msg || 'Unknown error.'; }
+  function fail(msg, blocked) {
+    show('td-progress', false); show('td-free', false); show('td-failed', true);
+    document.querySelector('#td-failed h3').textContent = blocked ? 'We could not read your site' : 'We could not finish the scan';
+    $('td-failed-msg').textContent = msg || 'Unknown error.';
+  }
 
   var polls = 0;
   function poll() {
     fetch('/api/teardown-status?id=' + encodeURIComponent(scanId)).then(function (r) { return r.json(); }).then(function (sum) {
       if (sum.status === 'done') return render(sum);
-      if (sum.status === 'failed') return fail(sum.error);
+      if (sum.status === 'failed' || sum.status === 'blocked') return fail(sum.error, sum.status === 'blocked');
       polls++;
       if (polls === 8) $('td-progress-title').textContent = 'Running Google\'s speed audit…';
       if (polls === 20) $('td-progress-title').textContent = 'Almost there…';

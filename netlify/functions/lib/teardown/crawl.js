@@ -138,13 +138,21 @@ function pickInternalPages(home, limit) {
 /**
  * @returns {{home, pages, robots, sitemap, errors}}
  */
-async function crawlSite(startUrl, { fetchImpl, lookup, maxPages = MAX_PAGES, log = () => {} } = {}) {
-  const opts = { fetchImpl, lookup };
+async function crawlSite(startUrl, { fetchImpl, lookup, maxPages = MAX_PAGES, log = () => {}, allowPrivate = false } = {}) {
+  const opts = { fetchImpl, lookup, allowPrivate };
   const errors = [];
   const homeRes = await fetchPage(startUrl, opts);
   const home = parsePage(homeRes);
   if (homeRes.error || homeRes.status >= 400) {
-    return { home, pages: [home], robots: null, sitemap: null, errors: [homeRes.error || `Homepage returned HTTP ${homeRes.status}`], httpProbe: null };
+    return {
+      home,
+      pages: [home],
+      robots: null,
+      sitemap: null,
+      errors: [homeRes.error || `Homepage returned HTTP ${homeRes.status}`],
+      httpProbe: null,
+      unreachable: { status: homeRes.status, error: homeRes.error, blockedOurUa: !!homeRes.blockedOurUa, firstStatus: homeRes.firstStatus || null },
+    };
   }
   const origin = new URL(home.finalUrl).origin;
 

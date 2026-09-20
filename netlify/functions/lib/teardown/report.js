@@ -14,10 +14,13 @@ const TRADE_LABEL = { hvac: 'HVAC', plumbing: 'Plumbing', roofing: 'Roofing', el
 function freeSummary(record) {
   const r = record.result;
   const base = { id: record.id, status: record.status, business: record.biz.name, url: record.biz.url, city: record.biz.city, trade: record.biz.trade, paid: !!record.paid, plan: record.plan || null };
-  if (record.status !== 'done' || !r) return { ...base, error: record.error || null };
+  if (record.status !== 'done' || !r) {
+    return { ...base, error: record.error || (record.blocked && record.blocked.reason) || null, blocked: record.blocked || null, sellable: false };
+  }
   const top = r.findings[0];
   return {
     ...base,
+    sellable: true,
     finalUrl: r.finalUrl,
     pagesCrawled: r.pagesCrawled,
     score: r.score.overall,

@@ -42,23 +42,33 @@ function createScanRecord(input) {
 }
 
 /** Run everything for a record. Mutates and returns it. */
-async function runScan(record, { fetchImpl, lookup, log = () => {}, env = process.env } = {}) {
+async function runScan(record, { fetchImpl, lookup, log = () => {}, env = process.env, allowPrivate = false } = {}) {
   const started = Date.now();
   record.status = 'running';
   record.startedAt = new Date().toISOString();
   const biz = record.biz;
   try {
     const [crawl, psi, local] = await Promise.all([
-      crawlSite(biz.url, { fetchImpl, lookup, log }),
+      crawlSite(biz.url, { fetchImpl, lookup, log, allowPrivate }),
       runPageSpeed(biz.url, { fetchImpl, apiKey: env.PAGESPEED_API_KEY }).catch((e) => ({ ok: false, error: e.message })),
       localPack(biz, { fetchImpl, apiKey: env.SERPAPI_KEY }).catch((e) => ({ ok: false, error: e.message })),
     ]);
     // llms.txt is cheap and tells us if anyone thought about AI search.
     try {
       const origin = new URL(crawl.home.finalUrl || biz.url).origin;
-      const r = await fetchPage(`${origin}/llms.txt`, { fetchImpl, lookup, timeout: 5000 });
+      const r = await fetchPage(`${origin}/llms.txt`, { fetchImpl, lookup, timeout: 5000, allowPrivate });
       crawl.llmsTxt = r.status === 200 && /\S/.test(r.body) && !/<html/i.test(r.body);
     } catch { crawl.llmsTxt = false; }
+
+    // We could not read the site. That is never a score, and never sellable.
+    if (crawl.unreachable) {
+      record.status = 'blocked';
+      record.finishedAt = new Date().toISOString();
+      record.durationMs = Date.now() - started;
+      record.blocked = { ...crawl.unreachable, reason: unreachableReason(crawl.unreachable, biz.url) };
+      log(`blocked: ${record.blocked.reason}`);
+      return record;
+    }
 
     const findings = sortFindings(runChecks({ crawl, psi, local, biz }));
     const score = scoreFindings(findings, psi);
@@ -87,4 +97,14 @@ async function runScan(record, { fetchImpl, lookup, log = () => {}, env = proces
   return record;
 }
 
-module.exports = { createScanRecord, runScan, TRADES, newId, newKey };
+/** Plain-English explanation an owner can act on. */
+function unreachableReason(u, url) {
+  const host = (() => { try { return new URL(url).hostname; } catch { return url; } })();
+  if (u.error) return `We could not reach ${host}: ${u.error}. Check the address is right and the site is up, then run the scan again.`;
+  if (u.status === 404) return `${host} answered, but the homepage returned "not found" (404). If your site lives at a different address, enter that one.`;
+  if (u.status >= 500) return `${host} returned a server error (HTTP ${u.status}). The site is having trouble right now. Try again later, or ask your host.`;
+  if (u.blockedOurUa) return `${host} is behind a firewall that refused our scanner (HTTP ${u.firstStatus || u.status}), including when we asked as an ordinary browser. That usually means a security plugin or CDN is blocking automated visitors. It can also block search engines, which is worth checking. Ask whoever manages the site to allow our scanner, or call us and we will run it by hand.`;
+  return `${host} refused the scan (HTTP ${u.status}). A security plugin or CDN is most likely blocking automated visitors.`;
+}
+
+module.exports = { createScanRecord, runScan, unreachableReason, TRADES, newId, newKey };

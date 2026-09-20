@@ -11,6 +11,10 @@ const dns = require('node:dns').promises;
 const net = require('node:net');
 
 const UA = 'Mozilla/5.0 (compatible; ProjectDriverTeardown/1.0; +https://project-driver.com/teardown)';
+// Many small-business sites sit behind a WAF that blocks unknown bots. When the
+// honest UA is refused we retry once looking like Chrome, then report both.
+const BROWSER_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36';
+const WAF_STATUSES = new Set([401, 403, 405, 406, 409, 429, 503]);
 const MAX_BYTES = 2 * 1024 * 1024;
 const DEFAULT_TIMEOUT = 12000;
 
@@ -46,7 +50,8 @@ function normalizeUrl(input) {
   return u.toString();
 }
 
-async function assertPublicHost(hostname, lookup = dns.lookup) {
+async function assertPublicHost(hostname, lookup = dns.lookup, allowPrivate = false) {
+  if (allowPrivate) return;
   if (net.isIP(hostname)) {
     if (isPrivateIp(hostname)) throw new Error('Refusing to scan a private address.');
     return;
@@ -60,13 +65,13 @@ async function assertPublicHost(hostname, lookup = dns.lookup) {
  * Fetch a URL and return {url, finalUrl, status, headers, body, bytes, ttfbMs, totalMs, redirects, error}.
  * Redirects are followed manually (max 5) and recorded.
  */
-async function fetchPage(url, { timeout = DEFAULT_TIMEOUT, fetchImpl = globalThis.fetch, lookup, maxRedirects = 5, method = 'GET' } = {}) {
+async function fetchPage(url, { timeout = DEFAULT_TIMEOUT, fetchImpl = globalThis.fetch, lookup, maxRedirects = 5, method = 'GET', allowPrivate = false, userAgent = UA, browserUaRetry = true } = {}) {
   const redirects = [];
   let current = url;
   const started = Date.now();
   for (let hop = 0; hop <= maxRedirects; hop++) {
     const u = new URL(current);
-    await assertPublicHost(u.hostname, lookup);
+    await assertPublicHost(u.hostname, lookup, allowPrivate);
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeout);
     let res;
@@ -76,7 +81,7 @@ async function fetchPage(url, { timeout = DEFAULT_TIMEOUT, fetchImpl = globalThi
         method,
         redirect: 'manual',
         signal: controller.signal,
-        headers: { 'User-Agent': UA, Accept: 'text/html,application/xhtml+xml,*/*;q=0.8', 'Accept-Language': 'en-US,en;q=0.9', 'Accept-Encoding': 'gzip, br' },
+        headers: { 'User-Agent': userAgent, Accept: 'text/html,application/xhtml+xml,*/*;q=0.8', 'Accept-Language': 'en-US,en;q=0.9', 'Accept-Encoding': 'gzip, br' },
       });
     } catch (e) {
       clearTimeout(timer);
@@ -92,6 +97,18 @@ async function fetchPage(url, { timeout = DEFAULT_TIMEOUT, fetchImpl = globalThi
       current = next;
       continue;
     }
+    // Refused by a firewall? Try once as a browser before calling the site broken.
+    if (browserUaRetry && userAgent === UA && WAF_STATUSES.has(res.status)) {
+      clearTimeout(timer);
+      const retry = await fetchPage(current, { timeout, fetchImpl, lookup, maxRedirects, method, allowPrivate, userAgent: BROWSER_UA, browserUaRetry: false });
+      retry.url = url;
+      retry.redirects = redirects.concat(retry.redirects);
+      retry.uaRetried = true;
+      retry.blockedOurUa = true;
+      retry.firstStatus = res.status;
+      return retry;
+    }
+
     let body = '';
     let bytes = 0;
     let truncated = false;
@@ -123,4 +140,4 @@ async function fetchPage(url, { timeout = DEFAULT_TIMEOUT, fetchImpl = globalThi
   return { url, finalUrl: current, status: 0, headers: {}, body: '', bytes: 0, ttfbMs: 0, totalMs: Date.now() - started, redirects, error: 'Too many redirects' };
 }
 
-module.exports = { fetchPage, normalizeUrl, isPrivateIp, assertPublicHost, UA, MAX_BYTES };
+module.exports = { fetchPage, normalizeUrl, isPrivateIp, assertPublicHost, UA, BROWSER_UA, WAF_STATUSES, MAX_BYTES };
