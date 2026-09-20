@@ -42,14 +42,14 @@ function createScanRecord(input) {
 }
 
 /** Run everything for a record. Mutates and returns it. */
-async function runScan(record, { fetchImpl, lookup, log = () => {}, env = process.env, allowPrivate = false } = {}) {
+async function runScan(record, { fetchImpl, lookup, log = () => {}, env = process.env, allowPrivate = false, maxPages } = {}) {
   const started = Date.now();
   record.status = 'running';
   record.startedAt = new Date().toISOString();
   const biz = record.biz;
   try {
     const [crawl, psi, local] = await Promise.all([
-      crawlSite(biz.url, { fetchImpl, lookup, log, allowPrivate }),
+      crawlSite(biz.url, { fetchImpl, lookup, log, allowPrivate, ...(maxPages ? { maxPages } : {}) }),
       runPageSpeed(biz.url, { fetchImpl, apiKey: env.PAGESPEED_API_KEY }).catch((e) => ({ ok: false, error: e.message })),
       localPack(biz, { fetchImpl, apiKey: env.SERPAPI_KEY }).catch((e) => ({ ok: false, error: e.message })),
     ]);
@@ -80,6 +80,8 @@ async function runScan(record, { fetchImpl, lookup, log = () => {}, env = proces
     record.result = {
       finalUrl: crawl.home.finalUrl,
       pagesCrawled: crawl.pages.filter((p) => !p.error).length,
+      knownPageCount: crawl.knownPageCount || crawl.pages.length,
+      sitemapUrlCount: (crawl.sitemap && crawl.sitemap.urls.length) || 0,
       pages: crawl.pages.map((p) => ({ url: p.finalUrl, status: p.status, title: p.title || '', h1: (p.h1s || [])[0] || '', words: p.wordCount || 0, images: (p.images || []).length, imagesNoAlt: (p.images || []).filter((i) => i.alt == null).length, description: !!p.metaDescription, error: p.error || null })),
       crawlErrors: crawl.errors,
       psi: psi && psi.ok ? psi : { ok: false, error: psi && psi.error },

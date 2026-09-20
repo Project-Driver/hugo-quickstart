@@ -31,6 +31,20 @@ const FL_LICENSE = {
   pool: { re: /\bCPC\s?\d{6,7}\b/i, label: 'CPC (pool contractor) license number' },
 };
 
+const TRADE_WORDS = {
+  hvac: { problem: 'a broken air conditioner', searches: '"AC not cooling", "no cold air"', example: 'See AC repair pricing' },
+  plumbing: { problem: 'a burst pipe', searches: '"water heater leaking", "clogged main line"', example: 'See drain cleaning pricing' },
+  roofing: { problem: 'a leaking roof', searches: '"roof leak repair", "storm damage"', example: 'See roof repair pricing' },
+  electrical: { problem: 'no power in half the house', searches: '"power out", "breaker keeps tripping"', example: 'See panel upgrade pricing' },
+  'garage-doors': { problem: 'a garage door that will not open', searches: '"garage door stuck", "broken spring"', example: 'See spring replacement pricing' },
+  pool: { problem: 'a green pool', searches: '"pool pump not working", "green pool cleanup"', example: 'See weekly service pricing' },
+  'pest-control': { problem: 'an infestation', searches: '"termites in the wall", "same day pest control"', example: 'See termite treatment pricing' },
+  landscaping: { problem: 'a yard nobody has touched in a month', searches: '"storm cleanup", "tree down"', example: 'See monthly maintenance pricing' },
+  cleaning: { problem: 'a house that has to be ready today', searches: '"same day cleaning", "move out cleaning"', example: 'See move-out cleaning pricing' },
+  'general-contractor': { problem: 'a job that has stalled', searches: '"emergency repair", "licensed contractor near me"', example: 'See remodel pricing' },
+  other: { problem: 'an urgent problem', searches: '"emergency", "same day service"', example: 'See our pricing' },
+};
+
 const LOCAL_TYPES = /^(LocalBusiness|HVACBusiness|Plumber|RoofingContractor|Electrician|HomeAndConstructionBusiness|GeneralContractor|HousePainter|Locksmith|MovingCompany|ProfessionalService|Store|Organization)$/i;
 
 function esc(s) { return String(s == null ? '' : s); }
@@ -52,6 +66,7 @@ function runChecks({ crawl, psi = null, local = null, biz = {} }) {
   const okPages = pages.filter((p) => !p.error && p.status >= 200 && p.status < 400);
   const city = (biz.city || '').trim();
   const trade = (biz.trade || '').toLowerCase();
+  const words = TRADE_WORDS[trade] || TRADE_WORDS.other;
   const allText = okPages.map((p) => p.text).join(' ');
 
   // ---------------------------------------------------------------- reachability
@@ -202,7 +217,9 @@ function runChecks({ crawl, psi = null, local = null, biz = {} }) {
 
   // ---------------------------------------------------------------- conversion
   if (!telLinks.length) add({ id: 'no-click-to-call', category: 'conversion', severity: 'high', title: 'Phone number is not tappable', cost: 'On a phone, a number that is just text means copy, switch apps, paste. Many do not.', fix: 'Wrap every phone number in a tel: link.', effort: 'quick', evidence: 'No tel: links on homepage', pages: [home.finalUrl], product: 'Get Booked Online' });
-  else if (phoneOnHome && home.text.search(PHONE_RE) > 400) add({ id: 'phone-buried', category: 'conversion', severity: 'medium', title: 'Phone number is not at the top of the page', cost: 'The first thing a homeowner with a broken AC looks for is the number.', fix: 'Put the number, tappable, in the header on every page.', effort: 'quick', evidence: `First phone number appears ${home.text.search(PHONE_RE)} characters into the page`, pages: [home.finalUrl], product: 'Get Booked Online' });
+  else if (phoneOnHome && (home.telAtFraction == null || home.telAtFraction > 0.25) && home.text.search(PHONE_RE) > 400) {
+    add({ id: 'phone-buried', category: 'conversion', severity: 'medium', title: 'Phone number is not at the top of the page', cost: `The first thing a homeowner with ${words.problem} looks for is the number.`, fix: 'Put the number, tappable, in the header on every page.', effort: 'quick', evidence: `The first tappable number sits ${home.telAtFraction == null ? 'outside the page source' : `${Math.round(home.telAtFraction * 100)}% of the way down the page source`}, and the first number in the text appears ${home.text.search(PHONE_RE)} characters in`, pages: [home.finalUrl], product: 'Get Booked Online' });
+  }
   const bookLinks = home.links.filter((l) => l.kind === 'link' && BOOK_RE.test(l.text));
   const anyForm = okPages.some((p) => p.forms.length);
   if (!bookLinks.length && !anyForm) add({ id: 'no-booking-path', category: 'conversion', severity: 'critical', title: 'No way to book or request a quote online', cost: 'Half of home-service customers would rather book than call, especially after hours. They go to whoever lets them.', fix: 'Add online booking that writes to your real calendar, or at minimum a short quote form, linked from the header.', effort: 'half-day', evidence: 'No booking/quote links and no forms on crawled pages', product: 'Get Booked Online' });
@@ -211,7 +228,7 @@ function runChecks({ crawl, psi = null, local = null, biz = {} }) {
   if (longForms.length) add({ id: 'long-form', category: 'conversion', severity: 'medium', title: `A form asks ${Math.max(...longForms.map((f) => f.n))} questions`, cost: 'Every field past name, phone and "what do you need" loses people.', fix: 'Cut the form to three fields. Ask the rest on the call.', effort: 'quick', evidence: longForms.map((f) => `${short(f.page)} (${f.n} fields)`).join(', '), pages: longForms.map((f) => f.page), product: 'Get Booked Online' });
   const smsLinks = home.links.filter((l) => l.kind === 'sms');
   if (!smsLinks.length) add({ id: 'no-text-us', category: 'conversion', severity: 'low', title: 'No "text us" option', cost: 'Younger homeowners text first. A sms: link costs nothing.', fix: 'Add a "Text us" link next to the phone number, routed to an inbox someone watches.', effort: 'quick', evidence: 'No sms: links found', product: 'Never Miss a Job' });
-  if (['hvac', 'plumbing', 'electrical', 'garage-doors', 'roofing'].includes(trade) && !EMERGENCY_RE.test(allText)) add({ id: 'no-emergency', category: 'conversion', severity: 'low', title: 'No mention of emergency or same-day service', cost: 'Urgent searches ("AC not cooling", "water heater leaking") are the highest-value calls, and the page does not claim them.', fix: 'Say plainly whether you do same-day or after-hours work, and what happens when someone calls at 9 PM.', effort: 'quick', evidence: 'No emergency / same-day / 24-7 wording found', product: 'AI Front Desk' });
+  if (['hvac', 'plumbing', 'electrical', 'garage-doors', 'roofing'].includes(trade) && !EMERGENCY_RE.test(allText)) add({ id: 'no-emergency', category: 'conversion', severity: 'low', title: 'No mention of emergency or same-day service', cost: `Urgent searches (${words.searches}) are the highest-value calls, and the page does not claim them.`, fix: 'Say plainly whether you do same-day or after-hours work, and what happens when someone calls at 9 PM.', effort: 'quick', evidence: 'No emergency / same-day / 24-7 wording found', product: 'AI Front Desk' });
   if (['hvac', 'roofing', 'plumbing', 'pool', 'general-contractor'].includes(trade) && !FINANCING_RE.test(allText)) add({ id: 'no-financing', category: 'conversion', severity: 'low', title: 'Financing is not mentioned', cost: 'A replacement is a five-figure decision. "As low as $X/month" keeps people on the page.', fix: 'Add a financing line to service pages and the header if you offer it.', effort: 'quick', evidence: 'No financing wording found', product: 'Content Onboarding' });
   if (!TRUST_RE.test(allText)) add({ id: 'no-trust-signals', category: 'conversion', severity: 'low', title: 'No licensed / insured / years-in-business line', cost: 'These are the three words every homeowner checks for.', fix: 'One line under the headline: "Licensed & insured · Serving [city] since [year]".', effort: 'quick', evidence: 'No trust wording found', product: 'Content Onboarding' });
   const allScripts = okPages.flatMap((p) => p.scripts).join(' ') + okPages.map((p) => p.html.slice(0, 200000)).join(' ');
@@ -230,10 +247,12 @@ function runChecks({ crawl, psi = null, local = null, biz = {} }) {
   if (unlabeled.length) add({ id: 'unlabeled-inputs', category: 'access', severity: 'medium', title: `${unlabeled.length} form field${unlabeled.length > 1 ? 's have' : ' has'} no label`, cost: 'Screen readers announce "edit text" with no idea what goes in it. Also a demand-letter item.', fix: 'Add a <label> for every field. Placeholder text does not count.', effort: 'quick', evidence: unlabeled.slice(0, 5).map((u) => `${short(u.page)}: ${u.name}`).join(', '), pages: [...new Set(unlabeled.map((u) => u.page))], product: 'Accessibility and Alt-Text Scan' });
   const skips = okPages.filter((p) => { let last = 0; for (const h of p.headings) { if (last && h.level > last + 1) return true; last = h.level; } return false; });
   if (skips.length) add({ id: 'heading-skips', category: 'access', severity: 'low', title: 'Heading levels skip (e.g. H1 straight to H3)', cost: 'Screen-reader users navigate by headings; skips make the page outline nonsense.', fix: 'Use H2 for sections and H3 inside them.', effort: 'quick', evidence: skips.map((p) => short(p.finalUrl)).join(', '), pages: skips.map((p) => p.finalUrl), product: 'Accessibility and Alt-Text Scan' });
-  const emptyLinks = okPages.flatMap((p) => p.links.filter((l) => l.kind === 'link' && !l.text).map(() => p.finalUrl));
-  if (emptyLinks.length) add({ id: 'empty-links', category: 'access', severity: 'low', title: `${emptyLinks.length} links with no text`, cost: 'Usually icon or image links. Screen readers read the raw address.', fix: 'Add aria-label or visually hidden text to icon links.', effort: 'quick', evidence: `${emptyLinks.length} across ${new Set(emptyLinks).size} pages`, pages: [...new Set(emptyLinks)].slice(0, 6), product: 'Accessibility and Alt-Text Scan' });
+  // A link is only nameless if it has no text, no aria-label, no image alt and
+  // no title. An icon link wrapping an image with alt text is fine.
+  const emptyLinks = okPages.flatMap((p) => p.links.filter((l) => l.kind === 'link' && !l.name).map(() => p.finalUrl));
+  if (emptyLinks.length) add({ id: 'empty-links', category: 'access', severity: 'low', title: `${emptyLinks.length} links a screen reader cannot name`, cost: 'These have no text, no label and no image description, so a screen reader reads out the raw web address instead.', fix: 'Give each one an aria-label, or alt text on the image inside it.', effort: 'quick', evidence: `${emptyLinks.length} across ${new Set(emptyLinks).size} pages`, pages: [...new Set(emptyLinks)].slice(0, 6), product: 'Accessibility and Alt-Text Scan' });
   const generic = okPages.flatMap((p) => p.links.filter((l) => /^(click here|read more|learn more|here|more)$/i.test(l.text)).map(() => p.finalUrl));
-  if (generic.length > 3) add({ id: 'generic-links', category: 'access', severity: 'low', title: `${generic.length} "click here" / "learn more" links`, cost: 'Meaningless out of context, for people and for Google.', fix: 'Say where the link goes: "See AC repair pricing".', effort: 'quick', evidence: `${generic.length} generic link texts`, product: 'Content Onboarding' });
+  if (generic.length > 3) add({ id: 'generic-links', category: 'access', severity: 'low', title: `${generic.length} "click here" / "learn more" links`, cost: 'Meaningless out of context, for people and for Google.', fix: `Say where the link goes: "${words.example}".`, effort: 'quick', evidence: `${generic.length} generic link texts`, product: 'Content Onboarding' });
   if (!home.lang) add({ id: 'no-lang', category: 'access', severity: 'low', title: 'Page language is not declared', cost: 'Screen readers may read English with the wrong pronunciation rules.', fix: 'Add lang="en" to the <html> tag.', effort: 'quick', evidence: 'No lang attribute on <html>', pages: [home.finalUrl], product: 'Accessibility and Alt-Text Scan' });
   if (psi && psi.ok && psi.scores.accessibility != null && psi.scores.accessibility < 80) add({ id: 'psi-a11y', category: 'access', severity: 'medium', title: `Google's accessibility audit scores ${psi.scores.accessibility}/100`, cost: 'Includes color contrast, which we cannot measure without rendering. Under 80 usually means low-contrast text.', fix: psi.a11yIssues.length ? `Top items: ${psi.a11yIssues.slice(0, 3).join('; ')}.` : 'Run the Lighthouse accessibility audit and fix contrast and labels.', effort: 'half-day', evidence: `Lighthouse accessibility ${psi.scores.accessibility}`, product: 'Accessibility and Alt-Text Scan' });
 

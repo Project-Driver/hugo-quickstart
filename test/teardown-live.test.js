@@ -13,7 +13,7 @@ const zlib = require('node:zlib');
 const { once } = require('node:events');
 
 const { fetchPage, normalizeUrl, UA, BROWSER_UA } = require('../netlify/functions/lib/teardown/fetcher');
-const { crawlSite } = require('../netlify/functions/lib/teardown/crawl');
+const { crawlSite, canonicalKey } = require('../netlify/functions/lib/teardown/crawl');
 const { runChecks } = require('../netlify/functions/lib/teardown/checks');
 const { scoreFindings } = require('../netlify/functions/lib/teardown/score');
 const { createScanRecord, runScan } = require('../netlify/functions/lib/teardown/scan');
@@ -34,6 +34,62 @@ const HOME = page('Home', `
 `);
 const SERVICES = page('Home', '<h1>Services</h1><h1>What we do</h1><p>Openers. Springs.</p>');
 const ABOUT = page('About Us', `<h1>About</h1><p>${'We have served homeowners for many years and take pride in our work. '.repeat(20)}</p>`, { desc: 'About our company' });
+
+/**
+ * A site shaped like the real ones that broke the crawler: pages reachable only
+ * from the sitemap, several addresses for the homepage, and icon links that
+ * wrap an image with alt text.
+ */
+const SITEMAP_ONLY = (slug) => page(`${slug} | Doors`, `<p>${'Detail about this service in Jupiter. '.repeat(25)}</p>`, { desc: `${slug} in Jupiter`, h1: slug });
+const HOME_WITH_ALIASES = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Garage Door Repair in Jupiter | Doors</title><meta name="description" content="Garage door repair in Jupiter."></head><body>
+<header><a href="tel:+15615550100">(561) 555-0100</a> <a href="/book">Book online</a></header>
+<h1>Garage Door Repair in Jupiter</h1>
+<p>Licensed and insured. Serving Jupiter since 2004. Call (561) 555-0100. Open Mon-Fri 7:00 am to 6:00 pm. 1420 Main St, Jupiter, FL 33458.</p>
+<a href="/"><img src="/logo.png" alt="Doors of Jupiter home"></a>
+<a href="https://www.facebook.com/x"><img src="/fb.svg" alt="Facebook"></a>
+<a href="/contact/" aria-label="Contact us"><span class="icon"></span></a>
+<a href="/reviews/"><svg><title>Read our reviews</title></svg></a>
+<a href="/nameless"><span class="icon"></span></a>
+<a href="/index.php">Home</a> <a href="/?utm_source=nav">Home again</a> <a href="/about">About</a> <a href="/about/">About us</a> <a href="/home-page">Our home page</a>
+<a href="/services/">Services</a>
+</body></html>`;
+
+function makeAliasSite() {
+  const hits = [];
+  let inFlight = 0, peak = 0;
+  const sitemapPages = ['spring-repair', 'opener-install', 'new-doors', 'commercial', 'maintenance', 'emergency-service'];
+  const server = http.createServer(async (req, res) => {
+    inFlight++; peak = Math.max(peak, inFlight);
+    hits.push(req.url);
+    const url = req.url.split('?')[0];
+    const done = (status, body, headers = {}) => {
+      setTimeout(() => { inFlight--; res.writeHead(status, { 'Content-Type': 'text/html; charset=utf-8', ...headers }); res.end(body); }, 15);
+    };
+    if (url === '/') return done(200, HOME_WITH_ALIASES);
+    if (url === '/index.php') return done(200, HOME_WITH_ALIASES);
+    if (url === '/home-page') return done(301, '', { Location: '/' });
+    if (url === '/about') return done(301, '', { Location: '/about/' });
+    if (url === '/about/') return done(200, SITEMAP_ONLY('About'));
+    if (url === '/robots.txt') return done(200, `User-agent: *\nAllow: /\nSitemap: http://127.0.0.1:${server.address().port}/sitemap_index.xml\n`, { 'Content-Type': 'text/plain' });
+    if (url === '/sitemap.xml') return done(404, 'no');
+    if (url === '/sitemap_index.xml') {
+      const base = `http://127.0.0.1:${server.address().port}`;
+      return done(200, `<?xml version="1.0"?><sitemapindex><sitemap><loc>${base}/page-sitemap.xml</loc></sitemap></sitemapindex>`, { 'Content-Type': 'application/xml' });
+    }
+    if (url === '/page-sitemap.xml') {
+      const base = `http://127.0.0.1:${server.address().port}`;
+      const locs = ['/', '/about/', '/contact/', '/reviews/', '/services/', '/book', ...sitemapPages.map((p) => `/services/${p}/`)]
+        .map((u) => `<url><loc>${base}${u}</loc></url>`).join('');
+      return done(200, `<?xml version="1.0"?><urlset>${locs}</urlset>`, { 'Content-Type': 'application/xml' });
+    }
+    const slug = url.replace(/^\/services\//, '').replace(/\/$/, '');
+    if (url.startsWith('/services/') && sitemapPages.includes(slug)) return done(200, SITEMAP_ONLY(slug));
+    if (['/contact/', '/reviews/', '/services/', '/book', '/nameless'].includes(url)) return done(200, SITEMAP_ONLY(url.replace(/\W/g, ' ').trim() || 'Page'));
+    return done(404, page('Not found', '<p>404</p>'));
+  });
+  return { server, hits, peak: () => peak, sitemapPages };
+}
 
 function makeSite({ wafBlocksScanner = false, alwaysBlock = false } = {}) {
   const hits = [];
@@ -184,4 +240,100 @@ test('request timeouts are reported, not hung', async (t) => {
 test('normalizeUrl still refuses loopback from user input', () => {
   assert.throws(() => normalizeUrl('http://127.0.0.1:8080/'), /cannot be scanned/);
   assert.throws(() => normalizeUrl('http://192.168.1.10/'), /cannot be scanned/);
+});
+
+test('pages listed only in the sitemap are found and crawled', async (t) => {
+  const { server, hits, sitemapPages } = makeAliasSite();
+  const base = await listen(server);
+  t.after(() => server.close());
+
+  const crawl = await crawlSite(base, { allowPrivate: true });
+  assert.equal(crawl.sitemap.present, true, 'found the sitemap named in robots.txt');
+  assert.equal(crawl.sitemap.isIndex, true, 'followed the sitemap index to its child');
+  assert.equal(crawl.sitemap.urls.length, 12);
+
+  const paths = crawl.pages.map((p) => new URL(p.finalUrl).pathname);
+  for (const slug of sitemapPages) {
+    assert.ok(paths.includes(`/services/${slug}/`), `crawled /services/${slug}/, which nothing on the homepage links to; got ${paths.join(', ')}`);
+  }
+  assert.ok(hits.includes('/page-sitemap.xml'));
+});
+
+test('one page is crawled once, however many addresses point at it', async (t) => {
+  const { server } = makeAliasSite();
+  const base = await listen(server);
+  t.after(() => server.close());
+
+  const crawl = await crawlSite(base, { allowPrivate: true });
+  const keys = crawl.pages.filter((p) => !p.error && p.status < 400).map((p) => canonicalKey(p.finalUrl));
+  assert.equal(new Set(keys).size, keys.length, `every crawled page is distinct; got ${keys.join(', ')}`);
+
+  const home = keys.filter((k) => new URL(k).pathname === '/');
+  assert.equal(home.length, 1, 'the homepage appears once despite /, /index.php, /?utm_source= and a redirect to it');
+  const about = crawl.pages.filter((p) => /\/about\/?$/.test(new URL(p.finalUrl).pathname));
+  assert.equal(about.length, 1, '/about and /about/ are the same page');
+});
+
+test('icon links with alt text or a label are not reported as nameless', async (t) => {
+  const { server } = makeAliasSite();
+  const base = await listen(server);
+  t.after(() => server.close());
+
+  const crawl = await crawlSite(base, { allowPrivate: true });
+  const named = crawl.home.links.filter((l) => l.kind === 'link' && l.name && !l.text);
+  assert.ok(named.length >= 3, 'links named by image alt, aria-label and svg title all count as named');
+
+  const findings = runChecks({ crawl, psi: null, local: null, biz: { name: 'Doors', city: 'Jupiter', trade: 'garage-doors' } });
+  const empty = findings.find((f) => f.id === 'empty-links');
+  assert.ok(empty, 'the one genuinely nameless link is still reported');
+  assert.match(empty.title, /^1 link/, `only the nameless link counts; got "${empty.title}"`);
+  assert.match(empty.title, /screen reader cannot name/);
+});
+
+test('a phone number in the header is not called buried, and copy matches the trade', async (t) => {
+  const { server } = makeAliasSite();
+  const base = await listen(server);
+  t.after(() => server.close());
+
+  const crawl = await crawlSite(base, { allowPrivate: true });
+  assert.ok(crawl.home.telAtFraction !== null && crawl.home.telAtFraction < 0.25, 'the tel: link is near the top of the source');
+  const findings = runChecks({ crawl, psi: null, local: null, biz: { name: 'Doors', city: 'Jupiter', trade: 'garage-doors' } });
+  assert.ok(!findings.some((f) => f.id === 'phone-buried'), 'a header phone link means the number is not buried');
+
+  // The same page without the header link should still be flagged, in this trade's words.
+  // Same page with the header link gone and the number pushed down the copy.
+  const noHeader = { ...crawl, home: { ...crawl.home, telAtFraction: 0.8, text: `${'Filler copy about our company history. '.repeat(20)}${crawl.home.text}` } };
+  const flagged = runChecks({ crawl: noHeader, psi: null, local: null, biz: { name: 'Doors', city: 'Jupiter', trade: 'garage-doors' } })
+    .find((f) => f.id === 'phone-buried');
+  assert.ok(flagged, 'still caught when the number really is buried');
+  assert.match(flagged.cost, /garage door that will not open/);
+  assert.doesNotMatch(flagged.cost, /\bAC\b|air conditioner/, 'no air-conditioning copy in a garage-door report');
+});
+
+test('no report mentions another trade, whatever the trade', async (t) => {
+  const { server } = makeAliasSite();
+  const base = await listen(server);
+  t.after(() => server.close());
+  const crawl = await crawlSite(base, { allowPrivate: true });
+  const bare = { ...crawl, home: { ...crawl.home, telAtFraction: 0.9, text: crawl.home.text.replace(/Mon-Fri[^.]*\./, '') } };
+  for (const trade of ['roofing', 'plumbing', 'pool', 'cleaning']) {
+    const text = runChecks({ crawl: bare, psi: null, local: null, biz: { name: 'X', city: 'Jupiter', trade } })
+      .map((f) => `${f.title} ${f.cost} ${f.fix}`).join(' ');
+    assert.doesNotMatch(text, /broken AC|AC repair pricing|AC not cooling/, `${trade} report still mentions air conditioning`);
+  }
+});
+
+test('the crawl is capped, says so, and never floods the host', async (t) => {
+  const { server, peak } = makeAliasSite();
+  const base = await listen(server);
+  t.after(() => server.close());
+
+  const crawl = await crawlSite(base, { allowPrivate: true, maxPages: 5 });
+  assert.equal(crawl.pages.length, 5, 'honours the cap');
+  assert.equal(crawl.crawlLimited, true);
+  assert.equal(crawl.knownPageCount, 12, 'reports how many pages the site actually has');
+  assert.ok(peak() <= 5, `at most five requests in flight at once; peaked at ${peak()}`);
+
+  const priority = crawl.pages.map((p) => new URL(p.finalUrl).pathname);
+  assert.ok(priority.includes('/contact/'), `contact is crawled before the long tail; got ${priority.join(', ')}`);
 });

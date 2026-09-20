@@ -9,8 +9,27 @@
 const cheerio = require('cheerio');
 const { fetchPage } = require('./fetcher');
 
-const MAX_PAGES = 10;
+const MAX_PAGES = 25;
+const CONCURRENCY = 5;
+const MAX_SITEMAPS = 5;
 const PRIORITY = [/service/i, /contact/i, /about/i, /book|schedule|appointment|quote|estimate/i, /review|testimonial/i, /area|location|city/i, /pricing|financ/i, /blog|faq/i];
+const TRACKING_PARAMS = /^(utm_|fbclid|gclid|msclkid|mc_cid|mc_eid|ref|replytocom|_ga)/i;
+
+/**
+ * One key per real page. Folds www, http/https, trailing slashes, index files,
+ * case and tracking parameters together so the same page is never crawled twice.
+ */
+function canonicalKey(u) {
+  try {
+    const x = new URL(u);
+    x.hash = '';
+    x.protocol = 'https:';
+    x.hostname = x.hostname.toLowerCase().replace(/^www\./, '');
+    for (const k of [...x.searchParams.keys()]) if (TRACKING_PARAMS.test(k)) x.searchParams.delete(k);
+    x.pathname = x.pathname.replace(/\/index\.(html?|php|aspx?)$/i, '/').replace(/\/{2,}/g, '/').replace(/\/+$/, '') || '/';
+    return x.toString();
+  } catch { return String(u); }
+}
 
 function sameSite(a, b) {
   const ha = new URL(a).hostname.replace(/^www\./, '');
@@ -27,17 +46,32 @@ function parsePage(res) {
   const $ = cheerio.load(res.body || '', { decodeEntities: true });
   const base = res.finalUrl;
   const text = cleanText($('body').text());
+  // A link's accessible name is what a screen reader announces: its text, or
+  // failing that an aria-label, the alt text of an image inside it, an SVG
+  // title, or a title attribute. Only a link with none of those is unusable.
+  const accessibleName = (el) => {
+    const $a = $(el);
+    const alts = $a.find('img[alt]').map((_, i) => cleanText($(i).attr('alt'))).get().filter(Boolean);
+    return cleanText($a.text())
+      || cleanText($a.attr('aria-label'))
+      || alts.join(' ')
+      || cleanText($a.find('svg title, svg desc').text())
+      || ($a.attr('aria-labelledby') ? 'referenced' : '')
+      || cleanText($a.attr('title'));
+  };
   const links = [];
   $('a[href]').each((_, a) => {
     const href = $(a).attr('href');
+    const text = cleanText($(a).text());
+    const name = accessibleName(a);
     if (!href || /^(mailto:|tel:|javascript:|#|sms:)/i.test(href)) {
-      if (href && /^tel:/i.test(href)) links.push({ href, text: cleanText($(a).text()), kind: 'tel' });
-      if (href && /^sms:/i.test(href)) links.push({ href, text: cleanText($(a).text()), kind: 'sms' });
+      if (href && /^tel:/i.test(href)) links.push({ href, text, name, kind: 'tel', at: $(a).index() });
+      if (href && /^sms:/i.test(href)) links.push({ href, text, name, kind: 'sms' });
       return;
     }
     try {
       const abs = new URL(href, base).toString().split('#')[0];
-      links.push({ href: abs, text: cleanText($(a).text()), internal: sameSite(abs, base), kind: 'link' });
+      links.push({ href: abs, text, name, internal: sameSite(abs, base), kind: 'link' });
     } catch { /* ignore bad hrefs */ }
   });
   const images = [];
@@ -77,9 +111,11 @@ function parsePage(res) {
   if (base.startsWith('https://')) {
     $('img[src^="http://"],script[src^="http://"],link[href^="http://"],iframe[src^="http://"]').each((_, el) => mixed.push($(el).attr('src') || $(el).attr('href')));
   }
+  const telMatch = (res.body || '').search(/href=["']tel:/i);
   return {
     url: res.url,
     finalUrl: base,
+    telAtFraction: telMatch === -1 ? null : telMatch / Math.max(1, (res.body || '').length),
     status: res.status,
     headers: res.headers,
     bytes: res.bytes,
@@ -118,21 +154,47 @@ async function fetchText(url, opts) {
   return r.status >= 200 && r.status < 300 ? r.body : '';
 }
 
-function pickInternalPages(home, limit) {
-  const seen = new Set([home.finalUrl.replace(/\/$/, '')]);
+/**
+ * Everything worth crawling: the sitemap first (it lists pages nothing links
+ * to), then the homepage's own links. Deduped by canonical key and ranked so
+ * the pages that decide whether someone calls come before the blog archive.
+ */
+function pickInternalPages(home, limit, sitemapUrls = []) {
+  const seen = new Set([canonicalKey(home.finalUrl)]);
   const candidates = [];
-  for (const l of home.links) {
-    if (!l.internal) continue;
-    const key = l.href.replace(/\/$/, '');
-    if (seen.has(key)) continue;
-    if (/\.(pdf|jpg|jpeg|png|gif|svg|webp|mp4|zip|docx?)$/i.test(key)) continue;
-    if (/\?(.*&)?(utm_|replytocom)/i.test(key)) continue;
+  const consider = (href, label, fromSitemap) => {
+    if (!href) return;
+    let key;
+    try { key = canonicalKey(new URL(href, home.finalUrl).toString()); } catch { return; }
+    if (seen.has(key)) return;
+    if (!sameSite(key, home.finalUrl)) return;
+    if (/\.(pdf|jpe?g|png|gif|svg|webp|avif|mp4|mov|zip|docx?|xlsx?|css|js|xml|txt)$/i.test(key)) return;
+    if (/\/(wp-admin|wp-login|wp-json|cart|checkout|my-account|feed)\b/i.test(key)) return;
     seen.add(key);
-    const score = PRIORITY.reduce((s, re, i) => (re.test(key) || re.test(l.text) ? s + (PRIORITY.length - i) : s), 0);
-    candidates.push({ href: l.href, score });
-  }
+    const hay = `${key} ${label || ''}`;
+    const score = PRIORITY.reduce((acc, re, i) => (re.test(hay) ? acc + (PRIORITY.length - i) : acc), 0)
+      + (fromSitemap ? 1 : 0)
+      - Math.max(0, (key.split('/').length - 4)); // prefer shallower pages
+    candidates.push({ href, score });
+  };
+  for (const u of sitemapUrls) consider(u, '', true);
+  for (const l of home.links) if (l.internal) consider(l.href, l.text, false);
   candidates.sort((a, b) => b.score - a.score);
   return candidates.slice(0, limit).map((c) => c.href);
+}
+
+/** Run jobs with a small pool so we never hammer a small business host. */
+async function pool(items, limit, worker) {
+  const out = new Array(items.length);
+  let next = 0;
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, async () => {
+    for (;;) {
+      const i = next++;
+      if (i >= items.length) return;
+      out[i] = await worker(items[i], i);
+    }
+  }));
+  return out;
 }
 
 /**
@@ -165,7 +227,7 @@ async function crawlSite(startUrl, { fetchImpl, lookup, maxPages = MAX_PAGES, lo
     } catch (e) { httpProbe = { error: e.message }; }
   }
 
-  const [robotsTxt, sitemapXml, notFound] = await Promise.all([
+  const [robotsTxt, rootSitemapXml, notFound] = await Promise.all([
     fetchText(`${origin}/robots.txt`, opts),
     fetchText(`${origin}/sitemap.xml`, opts),
     fetchPage(`${origin}/this-page-should-not-exist-${Date.now()}`, { ...opts, timeout: 6000 }).catch((e) => ({ status: 0, error: e.message })),
@@ -173,22 +235,79 @@ async function crawlSite(startUrl, { fetchImpl, lookup, maxPages = MAX_PAGES, lo
   const robots = robotsTxt ? {
     present: true,
     disallowsAll: /^\s*User-agent:\s*\*\s*[\r\n]+\s*Disallow:\s*\/\s*$/im.test(robotsTxt),
-    sitemapLines: (robotsTxt.match(/^sitemap:\s*(\S+)/gim) || []).map((l) => l.split(/:\s*/).slice(1).join(':')),
+    sitemapLines: (robotsTxt.match(/^sitemap:\s*(\S+)/gim) || []).map((l) => l.split(/:\s*/).slice(1).join(':').trim()),
   } : { present: false, disallowsAll: false, sitemapLines: [] };
-  // A soft-404 site returns HTML for /sitemap.xml; only count real XML sitemaps.
-  const realSitemap = /<(urlset|sitemapindex)\b/i.test(sitemapXml || '');
-  const sitemapUrls = realSitemap ? (sitemapXml.match(/<loc>\s*([^<\s]+)\s*<\/loc>/gi) || []).map((m) => m.replace(/<\/?loc>/gi, '').trim()) : [];
-  const sitemap = { present: realSitemap, isIndex: /<sitemapindex/i.test(sitemapXml || ''), urls: sitemapUrls };
 
-  const targets = pickInternalPages(home, maxPages - 1);
-  log(`crawling ${targets.length} internal pages`);
-  const results = await Promise.all(targets.map((u) => fetchPage(u, opts).then(parsePage).catch((e) => ({ url: u, finalUrl: u, status: 0, error: e.message, links: [], images: [], headings: [], h1s: [], jsonLd: [], forms: [], scripts: [], iframes: [], mixedContent: [], text: '', wordCount: 0 }))));
-  for (const p of results) {
-    if (p.error) errors.push(`${p.url}: ${p.error}`);
-    else if (p.status >= 400) errors.push(`${p.url}: HTTP ${p.status}`);
+  // Gather page addresses from every sitemap we can find: /sitemap.xml, any
+  // sitemap named in robots.txt, and the children of a sitemap index. A soft-404
+  // site answers /sitemap.xml with HTML, so only real XML counts.
+  const locsOf = (xml) => (xml.match(/<loc>\s*([^<\s]+)\s*<\/loc>/gi) || []).map((m) => m.replace(/<\/?loc>/gi, '').trim());
+  const isXml = (xml) => /<(urlset|sitemapindex)\b/i.test(xml || '');
+  const seenSitemaps = new Set();
+  const sitemapDocs = [];
+  const queue = [`${origin}/sitemap.xml`, ...robots.sitemapLines];
+  let rootPresent = isXml(rootSitemapXml);
+  if (rootPresent) { seenSitemaps.add(`${origin}/sitemap.xml`); sitemapDocs.push({ url: `${origin}/sitemap.xml`, xml: rootSitemapXml }); }
+  for (const u of queue) {
+    if (sitemapDocs.length >= MAX_SITEMAPS) break;
+    if (seenSitemaps.has(u)) continue;
+    seenSitemaps.add(u);
+    const xml = await fetchText(u, opts);
+    if (isXml(xml)) sitemapDocs.push({ url: u, xml });
   }
+  // Follow a sitemap index one level down.
+  for (const doc of [...sitemapDocs]) {
+    if (!/<sitemapindex/i.test(doc.xml)) continue;
+    for (const child of locsOf(doc.xml)) {
+      if (sitemapDocs.length >= MAX_SITEMAPS) break;
+      if (seenSitemaps.has(child)) continue;
+      seenSitemaps.add(child);
+      const xml = await fetchText(child, opts);
+      if (isXml(xml) && /<urlset/i.test(xml)) sitemapDocs.push({ url: child, xml });
+    }
+  }
+  const sitemapUrls = [...new Set(sitemapDocs.filter((d) => /<urlset/i.test(d.xml)).flatMap((d) => locsOf(d.xml)))];
+  const sitemap = {
+    present: rootPresent || sitemapDocs.length > 0,
+    isIndex: sitemapDocs.some((d) => /<sitemapindex/i.test(d.xml)),
+    sources: sitemapDocs.map((d) => d.url),
+    urls: sitemapUrls,
+  };
+  if (sitemapUrls.length) log(`sitemap lists ${sitemapUrls.length} pages`);
+
+  const targets = pickInternalPages(home, maxPages - 1, sitemapUrls);
+  log(`crawling ${targets.length} of ${Math.max(targets.length, sitemapUrls.length)} known pages`);
+  const fetched = await pool(targets, CONCURRENCY, (u) => fetchPage(u, opts).then(parsePage).catch((e) => ({
+    url: u, finalUrl: u, status: 0, error: e.message,
+    links: [], images: [], headings: [], h1s: [], jsonLd: [], forms: [], scripts: [], iframes: [], mixedContent: [], text: '', wordCount: 0,
+  })));
+
+  // Two addresses can redirect to the same page; keep the first of each.
+  const byKey = new Set([canonicalKey(home.finalUrl)]);
+  const results = [];
+  let duplicates = 0;
+  for (const p of fetched) {
+    if (p.error) { errors.push(`${p.url}: ${p.error}`); results.push(p); continue; }
+    if (p.status >= 400) { errors.push(`${p.url}: HTTP ${p.status}`); results.push(p); continue; }
+    const key = canonicalKey(p.finalUrl);
+    if (byKey.has(key)) { duplicates++; continue; }
+    byKey.add(key);
+    results.push(p);
+  }
+  if (duplicates) log(`skipped ${duplicates} duplicate page${duplicates === 1 ? '' : 's'}`);
+
   const pages = [home, ...results];
-  return { home, pages, robots, sitemap, errors, httpProbe, notFoundStatus: notFound.status };
+  return {
+    home,
+    pages,
+    robots,
+    sitemap,
+    errors,
+    httpProbe,
+    notFoundStatus: notFound.status,
+    knownPageCount: Math.max(sitemapUrls.length, pages.length),
+    crawlLimited: sitemapUrls.length > pages.length,
+  };
 }
 
-module.exports = { crawlSite, parsePage, pickInternalPages, sameSite, cleanText };
+module.exports = { crawlSite, parsePage, pickInternalPages, sameSite, cleanText, canonicalKey, pool, MAX_PAGES };

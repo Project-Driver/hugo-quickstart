@@ -23,6 +23,7 @@ function freeSummary(record) {
     sellable: true,
     finalUrl: r.finalUrl,
     pagesCrawled: r.pagesCrawled,
+    knownPageCount: r.knownPageCount || r.pagesCrawled,
     score: r.score.overall,
     grade: r.score.grade,
     categories: Object.fromEntries(Object.entries(r.score.categories).map(([k, v]) => [k, { label: v.label, score: v.score, findings: v.findings }])),
@@ -34,6 +35,14 @@ function freeSummary(record) {
     // Titles only, no fixes: enough to see what is inside.
     findingTitles: r.findings.slice(0, 8).map((f) => ({ severity: f.severity, category: f.category, title: f.title })),
   };
+}
+
+/** Keep the start and end of a path so two long URLs never look identical. */
+function shortUrl(u, max = 52) {
+  const s = String(u).replace(/^https?:\/\/(www\.)?/, '');
+  if (s.length <= max) return s || '/';
+  const keepEnd = Math.floor(max / 2) - 2;
+  return `${s.slice(0, max - keepEnd - 1)}…${s.slice(-keepEnd)}`;
 }
 
 function scoreColor(s) { return s >= 80 ? '#8bd346' : s >= 65 ? '#ffb020' : s >= 50 ? '#ff8a3d' : '#ff4d4f'; }
@@ -70,7 +79,7 @@ function fullReportHtml(record, { brand = 'Project Driver', bookUrl = 'https://p
       <p class="fix"><b>Fix.</b> ${esc(f.fix)}</p>
       <div class="meta">
         <span>Evidence: ${esc(f.evidence)}</span>
-        ${f.pages && f.pages.length ? `<span>Pages: ${f.pages.slice(0, 4).map((p) => `<a href="${esc(p)}" target="_blank" rel="noopener">${esc(p.replace(/^https?:\/\/(www\.)?/, '').slice(0, 48))}</a>`).join(', ')}${f.pages.length > 4 ? ` +${f.pages.length - 4}` : ''}</span>` : ''}
+        ${f.pages && f.pages.length ? `<span>Pages: ${f.pages.slice(0, 4).map((p) => `<a href="${esc(p)}" target="_blank" rel="noopener">${esc(shortUrl(p, 48))}</a>`).join(', ')}${f.pages.length > 4 ? ` +${f.pages.length - 4}` : ''}</span>` : ''}
         <span>Effort: ${esc(f.effort === 'quick' ? 'under an hour' : f.effort === 'half-day' ? 'half a day' : 'a project')}</span>
         ${f.product ? `<span>We fix this with: ${esc(f.product)}</span>` : ''}
       </div>
@@ -83,7 +92,7 @@ function fullReportHtml(record, { brand = 'Project Driver', bookUrl = 'https://p
       <ol>${w.items.map((it) => `<li><a href="#f-${esc(it.id)}"><span class="dot" style="background:${SEV_COLOR[it.severity]}"></span>${esc(it.title)}</a><span class="muted"> · ${esc(it.fix)}</span></li>`).join('')}</ol>
     </section>`).join('');
 
-  const pagesHtml = r.pages.map((p) => `<tr><td><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.url.replace(/^https?:\/\/(www\.)?/, '').slice(0, 50) || '/')}</a></td><td>${p.error ? `<span class="bad">${esc(p.error)}</span>` : p.status}</td><td>${esc(p.title || '—')}</td><td>${p.h1 ? esc(p.h1) : '<span class="bad">none</span>'}</td><td class="n">${p.words}</td><td class="n">${p.imagesNoAlt ? `<span class="bad">${p.imagesNoAlt}</span>` : 0}/${p.images}</td><td>${p.description ? 'yes' : '<span class="bad">no</span>'}</td></tr>`).join('');
+  const pagesHtml = r.pages.map((p) => `<tr><td><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(shortUrl(p.url))}</a></td><td>${p.error ? `<span class="bad">${esc(p.error)}</span>` : p.status}</td><td>${esc(p.title || '—')}</td><td>${p.h1 ? esc(p.h1) : '<span class="bad">none</span>'}</td><td class="n">${p.words}</td><td class="n">${p.imagesNoAlt ? `<span class="bad">${p.imagesNoAlt}</span>` : 0}/${p.images}</td><td>${p.description ? 'yes' : '<span class="bad">no</span>'}</td></tr>`).join('');
 
   const psiHtml = psi.ok ? `
     <div class="grid4">
@@ -141,7 +150,7 @@ function fullReportHtml(record, { brand = 'Project Driver', bookUrl = 'https://p
     <div>
       <div class="grade">Grade ${esc(s.grade)}</div>
       <h1>${esc(b.name)}</h1>
-      <p class="muted"><a href="${esc(r.finalUrl)}" target="_blank" rel="noopener">${esc(r.finalUrl.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, ''))}</a> · ${r.pagesCrawled} pages crawled${psi.ok ? ' · Google PageSpeed included' : ''}${local.ok ? ' · Google Maps compared' : ''}</p>
+      <p class="muted"><a href="${esc(r.finalUrl)}" target="_blank" rel="noopener">${esc(r.finalUrl.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, ''))}</a> · ${r.pagesCrawled}${r.knownPageCount > r.pagesCrawled ? ` of ${r.knownPageCount}` : ''} pages crawled${psi.ok ? ' · Google PageSpeed included' : ''}${local.ok ? ' · Google Maps compared' : ''}</p>
       <div class="sevrow">${Object.entries(s.bySeverity).filter(([, n]) => n).map(([k, n]) => `<span><i style="background:${SEV_COLOR[k]}"></i>${n} ${SEV_LABEL[k].toLowerCase()}</span>`).join('')}</div>
       <div class="toolbar"><button onclick="window.print()">Save as PDF</button><a href="${esc(bookUrl)}">Walk through it with us</a></div>
     </div>
@@ -174,7 +183,7 @@ function fullReportHtml(record, { brand = 'Project Driver', bookUrl = 'https://p
     <p><a class="btn" href="${esc(bookUrl)}">Book the 30-minute walkthrough</a></p>
   </div>
 
-  <p class="foot">Prepared automatically by ${esc(brand)}'s Teardown scanner on ${esc(date)} from a crawl of ${r.pagesCrawled} public pages${psi.ok ? ', Google PageSpeed Insights' : ''}${local.ok ? ', and a Google Maps search' : ''}. Color contrast and anything requiring a logged-in view were not measured. Report ID ${esc(record.id)}.${siteUrl ? ` Keep this link: ${esc(siteUrl)}/api/teardown-report?id=${esc(record.id)}&k=${esc(record.key)}` : ''}</p>
+  <p class="foot">Prepared automatically by ${esc(brand)}'s Teardown scanner on ${esc(date)} from a crawl of ${r.pagesCrawled} public pages${r.knownPageCount > r.pagesCrawled ? ` (the sitemap lists ${r.knownPageCount}; we read the ${r.pagesCrawled} that decide whether someone calls, worst-first)` : ''}${psi.ok ? ', Google PageSpeed Insights' : ''}${local.ok ? ', and a Google Maps search' : ''}. Color contrast and anything requiring a logged-in view were not measured. Report ID ${esc(record.id)}.${siteUrl ? ` Keep this link: ${esc(siteUrl)}/api/teardown-report?id=${esc(record.id)}&k=${esc(record.key)}` : ''}</p>
 </div></body></html>`;
 }
 

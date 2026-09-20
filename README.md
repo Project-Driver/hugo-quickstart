@@ -83,7 +83,7 @@ Drop `dryRun` to send for real. Omit `accountId` to run every active account.
 
 ## Tests
 
-`npm test` runs 50 tests. For Teardown: two fixture websites run through the crawler and every rule, the free/paid projection, Stripe signature verification, checkout, webhook idempotency, delivery, and report gating. For Pit Board it covers the time-zone windows (including a DST change), every board rule (missed-call recovery, waiting replies, stale estimates, unpaid invoices, score, nudges), the SMS length budget, HTML escaping, the account registry, the runner against a mocked GHL API, and the three HTTP functions. `cypress/e2e/basic.cy.js` smoke-tests the built site on Netlify.
+`npm test` runs 56 tests. For Teardown: two fixture websites run through the crawler and every rule, the free/paid projection, Stripe signature verification, checkout, webhook idempotency, delivery, and report gating. For Pit Board it covers the time-zone windows (including a DST change), every board rule (missed-call recovery, waiting replies, stale estimates, unpaid invoices, score, nudges), the SMS length budget, HTML escaping, the account registry, the runner against a mocked GHL API, and the three HTTP functions. `cypress/e2e/basic.cy.js` smoke-tests the built site on Netlify.
 
 ## License
 

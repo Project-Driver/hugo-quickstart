@@ -6,7 +6,7 @@ A stranger lands on `/teardown/`, types their website, gets a free score in abou
 
 ```
 /teardown/ form  ─POST─>  teardown-start ──> stores scan (Netlify Blobs) ──> teardown-run-background (15-min budget)
-                                                                                   │ crawl up to 10 pages, robots, sitemap, llms.txt
+                                                                                   │ crawl up to 25 pages, robots, sitemap, llms.txt
                                                                                    │ Google PageSpeed (Lighthouse) in parallel
                                                                                    │ Google Maps local pack via SerpApi in parallel
                                                                                    │ 45+ rule checks -> findings -> score -> 30-day plan
@@ -34,6 +34,14 @@ Scores: each category starts at 100 and loses 30 / 16 / 8 / 3 per critical / hig
 
 Not measured, and the report says so: color contrast, anything behind a login, and call handling (that is what Pit Board and Never Miss a Job are for).
 
+## How pages are found
+
+Discovery reads the sitemap first, then the homepage's own links. That order matters: on most WordPress sites half the service and city pages are not linked from the homepage at all, so a link-only crawl misses exactly the pages that rank. We look at `/sitemap.xml`, every `Sitemap:` line in `robots.txt`, and one level of a sitemap index, up to five sitemap documents.
+
+Candidates are then deduplicated by a canonical key that folds together `www` and bare domains, `http` and `https`, trailing slashes, `index.php` and friends, casing, and tracking parameters. Pages are ranked so the ones that decide whether somebody calls (services, contact, booking, reviews, service areas) come before the blog archive, with shallower URLs preferred. After fetching, pages are deduplicated a second time by their final URL, because two addresses can redirect to the same page.
+
+The crawl is capped at 25 pages and runs five requests at a time so a small business host is never flooded. When the site has more pages than the cap, the report says so on the front page and in the footer: "10 of 38 pages crawled". Raise it from the command line with `--max-pages`.
+
 ## When the site cannot be read
 
 A scan that cannot load the homepage is marked `blocked`, not `done`. It gets no score, no grade, no report, and checkout refuses it with HTTP 409 so nobody is ever charged for a site we could not read. The blocked reason is written for the owner: a dead address, a 404 homepage, a server error, or, most often, a security plugin or CDN refusing automated visitors.
@@ -56,11 +64,11 @@ npm run teardown -- residentialgaragedoorservice.net \
   --business "Residential Garage Door Service" --city Jupiter --trade garage-doors
 ```
 
-It prints the score, the category breakdown and every finding, then writes the full HTML report next to you. `PAGESPEED_API_KEY` and `SERPAPI_KEY` are read from the environment if set. `--out <file>` chooses the report path, `--json <file>` also dumps the raw scan record, and `--allow-private` permits localhost for local testing.
+It prints the score, the category breakdown and every finding, then writes the full HTML report next to you. `PAGESPEED_API_KEY` and `SERPAPI_KEY` are read from the environment if set. `--out <file>` chooses the report path, `--json <file>` also dumps the raw scan record, `--max-pages <n>` changes the crawl cap, and `--allow-private` permits localhost for local testing.
 
 ## Testing without money
 
-- `npm test` runs 50 tests: the whole pipeline against two fixture websites (a neglected one and a good one), Stripe signature checks, and `test/teardown-live.test.js`, which starts a real HTTP server on loopback and exercises the actual network stack: gzip, 301 redirects, robots, soft 404s, request timeouts, a firewall that blocks the scanner and is retried as a browser, and a site that blocks everything and must end up unsellable.
+- `npm test` runs 56 tests: the whole pipeline against two fixture websites (a neglected one and a good one), Stripe signature checks, and `test/teardown-live.test.js`, which starts a real HTTP server on loopback and exercises the actual network stack: gzip, 301 redirects, robots, soft 404s, request timeouts, a firewall that blocks the scanner and is retried as a browser, a site that blocks everything and must end up unsellable, pages reachable only through a sitemap index, a homepage served at five different addresses, icon links named by image alt or aria-label, and the concurrency cap.
 - On the deployed site, run a scan; the free result shows without Stripe. To see the paid report for a scan without paying: `/api/teardown-report?id=<id>&key=<PITBOARD_PREVIEW_KEY>`.
 - Stripe test mode works end to end with a test card; the webhook can be sent from the Stripe dashboard.
 

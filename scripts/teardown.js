@@ -17,6 +17,7 @@
  *   --email <email>     only used to label the run      (default: cli@local)
  *   --out <file>        where to write the HTML report  (default: teardown-<host>.html)
  *   --json <file>       also write the raw scan record
+ *   --max-pages <n>     how many pages to crawl (default 25)
  *   --allow-private     permit localhost / private addresses (local testing only)
  *
  * Environment (both optional, both improve the report):
@@ -79,7 +80,8 @@ async function main() {
   console.error(`  ${paint(C.dim, record.biz.url)}\n`);
   if (!process.env.PAGESPEED_API_KEY) console.error(paint(C.dim, "  No PAGESPEED_API_KEY: Google's speed audit will likely be skipped.\n"));
 
-  await runScan(record, { env: process.env, allowPrivate, log: (m) => console.error(paint(C.dim, `  ${m}`)) });
+  const maxPages = args['max-pages'] ? Math.max(1, parseInt(args['max-pages'], 10)) : undefined;
+  await runScan(record, { env: process.env, allowPrivate, maxPages, log: (m) => console.error(paint(C.dim, `  ${m}`)) });
 
   if (record.status === 'blocked') {
     console.error(`  ${paint(C.red, 'Blocked.')} ${record.blocked.reason}\n`);
@@ -93,7 +95,9 @@ async function main() {
   const r = record.result;
   const s = r.score;
   const gradeColor = s.overall >= 80 ? C.green : s.overall >= 65 ? C.yellow : s.overall >= 50 ? C.orange : C.red;
-  console.error(`  ${paint(C.bold + gradeColor, `${s.overall}/100`)}  grade ${paint(gradeColor, s.grade)}   ${paint(C.dim, `${r.pagesCrawled} pages · ${((Date.now() - started) / 1000).toFixed(1)}s`)}`);
+  const pageNote = r.knownPageCount > r.pagesCrawled ? `${r.pagesCrawled} of ${r.knownPageCount} pages` : `${r.pagesCrawled} pages`;
+  console.error(`  ${paint(C.bold + gradeColor, `${s.overall}/100`)}  grade ${paint(gradeColor, s.grade)}   ${paint(C.dim, `${pageNote} · ${((Date.now() - started) / 1000).toFixed(1)}s`)}`);
+  if (r.knownPageCount > r.pagesCrawled) console.error(paint(C.dim, `  The sitemap lists ${r.knownPageCount} pages. Raise the cap with --max-pages ${r.knownPageCount}.`));
   console.error('  ' + Object.entries(s.categories).map(([, c]) => `${c.label} ${c.score}`).join(paint(C.dim, ' · ')));
   console.error('  ' + Object.entries(s.bySeverity).filter(([, n]) => n).map(([k, n]) => paint(SEV_COLOR[k], `${n} ${k}`)).join(paint(C.dim, ' · ')) + '\n');
 
