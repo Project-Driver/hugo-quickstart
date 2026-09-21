@@ -8,7 +8,7 @@ function esc(s) {
 
 const SEV_LABEL = { critical: 'Critical', high: 'High', medium: 'Medium', low: 'Low' };
 const SEV_COLOR = { critical: '#ff4d4f', high: '#ff8a3d', medium: '#ffb020', low: '#4da3ff' };
-const TRADE_LABEL = { hvac: 'HVAC', plumbing: 'Plumbing', roofing: 'Roofing', electrical: 'Electrical', 'garage-doors': 'Garage doors', pool: 'Pool service', 'pest-control': 'Pest control', landscaping: 'Landscaping', cleaning: 'Cleaning', 'general-contractor': 'General contracting', other: 'Home services' };
+const TRADE_LABEL = { barbershop: 'Barbershop', salon: 'Salon', hvac: 'HVAC', plumbing: 'Plumbing', roofing: 'Roofing', electrical: 'Electrical', 'garage-doors': 'Garage doors', pool: 'Pool service', 'pest-control': 'Pest control', landscaping: 'Landscaping', cleaning: 'Cleaning', 'general-contractor': 'General contracting', other: 'Home services' };
 
 /** What the visitor sees before paying. Enough to be useful, not the fixes. */
 function freeSummary(record) {

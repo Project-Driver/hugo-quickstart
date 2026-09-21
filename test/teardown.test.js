@@ -134,11 +134,43 @@ test('correct schema for a non-home-service business is not reported as missing'
   assert.match('HairSalon', LOCAL_TYPES);
 });
 
-test('a barbershop report is not written for a homeowner', () => {
-  const { TRADE_WORDS } = require('../netlify/functions/lib/teardown/checks');
-  for (const trade of ['barbershop', 'salon', 'other']) {
-    assert.doesNotMatch(TRADE_WORDS[trade].problem, /homeowner|house|AC|roof/i, `${trade} wording still assumes a home service`);
+test('no report borrows another trade\'s vocabulary, anywhere in its text', () => {
+  const { parsePage } = require('../netlify/functions/lib/teardown/crawl');
+  const { TRADES } = require('../netlify/functions/lib/teardown/scan');
+  // A bare page, so almost every rule fires and every sentence gets exercised.
+  const home = parsePage({ url: 'https://x.test/', finalUrl: 'https://x.test/', status: 200, headers: {}, body: '<html><body><p>Hello.</p></body></html>', bytes: 100, ttfbMs: 50, totalMs: 60, redirects: [], error: null });
+  const crawl = { home, pages: [home], robots: { present: false, disallowsAll: false, sitemapLines: [] }, sitemap: { present: false, isIndex: false, urls: [] }, errors: [], httpProbe: null, notFoundStatus: 404, llmsTxt: false };
+  const OTHER_TRADE = {
+    barbershop: /\bAC\b|air conditioner|\\bduct\\b|\\broof|\\bplumb|garage door|termite|homeowner/i,
+    salon: /\bAC\b|air conditioner|\\bduct\\b|\\broof|\\bplumb|garage door|termite|homeowner/i,
+    other: /\bAC\b|air conditioner|\\bduct\\b|\\broof|\\bplumb|garage door|termite/i,
+    'garage-doors': /\bAC\b|air conditioner|duct cleaning|roof repair|repiping|termite/i,
+    roofing: /\bAC\b|air conditioner|duct cleaning|garage door|repiping|termite/i,
+    plumbing: /\bAC\b|air conditioner|duct cleaning|roof repair|garage door|termite/i,
+  };
+  for (const trade of TRADES) {
+    const text = runChecks({ crawl, psi: null, local: null, biz: { name: 'X', city: 'Jupiter', trade } })
+      .map((f) => `${f.title} ${f.cost} ${f.fix}`).join(' ');
+    const forbidden = OTHER_TRADE[trade];
+    if (forbidden) assert.doesNotMatch(text, forbidden, `a ${trade} report uses another trade's words`);
   }
+});
+
+test('a shop customers travel to is not told to build city pages', () => {
+  const { parsePage } = require('../netlify/functions/lib/teardown/crawl');
+  const home = parsePage({ url: 'https://x.test/', finalUrl: 'https://x.test/', status: 200, headers: {}, body: '<html><body><p>Hello.</p></body></html>', bytes: 100, ttfbMs: 50, totalMs: 60, redirects: [], error: null });
+  const crawl = { home, pages: [home], robots: { present: false, disallowsAll: false, sitemapLines: [] }, sitemap: { present: false, isIndex: false, urls: [] }, errors: [], httpProbe: null, notFoundStatus: 404, llmsTxt: false };
+  const fires = (trade) => runChecks({ crawl, psi: null, local: null, biz: { name: 'X', city: 'Jupiter', trade } }).some((f) => f.id === 'no-city-pages');
+  assert.equal(fires('barbershop'), false, 'people come to the barber, so city pages are the wrong advice');
+  assert.equal(fires('salon'), false);
+  assert.equal(fires('plumbing'), true, 'a trade that drives to the customer still needs them');
+});
+
+test('counts read as English when there is only one', () => {
+  const { plural } = require('../netlify/functions/lib/teardown/checks');
+  assert.equal(plural(1, 'link', 'links'), '1 link');
+  assert.equal(plural(0, 'link', 'links'), '0 links');
+  assert.equal(plural(273, 'link', 'links'), '273 links');
 });
 
 test('sorting and the 30-day plan', () => {
