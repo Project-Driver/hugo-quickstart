@@ -42,10 +42,14 @@ const TRADE_WORDS = {
   landscaping: { problem: 'a yard nobody has touched in a month', searches: '"storm cleanup", "tree down"', example: 'See monthly maintenance pricing' },
   cleaning: { problem: 'a house that has to be ready today', searches: '"same day cleaning", "move out cleaning"', example: 'See move-out cleaning pricing' },
   'general-contractor': { problem: 'a job that has stalled', searches: '"emergency repair", "licensed contractor near me"', example: 'See remodel pricing' },
-  other: { problem: 'an urgent problem', searches: '"emergency", "same day service"', example: 'See our pricing' },
+  barbershop: { problem: 'a wedding on Saturday and no appointment', searches: '"barber near me open now", "walk in haircut"', example: 'See our cuts and pricing' },
+  salon: { problem: 'an event this weekend and no appointment', searches: '"salon near me open now", "same day appointment"', example: 'See our services and pricing' },
+  other: { problem: 'a problem they want solved today', searches: '"near me open now", "same day"', example: 'See our pricing' },
 };
 
-const LOCAL_TYPES = /^(LocalBusiness|HVACBusiness|Plumber|RoofingContractor|Electrician|HomeAndConstructionBusiness|GeneralContractor|HousePainter|Locksmith|MovingCompany|ProfessionalService|Store|Organization)$/i;
+// Any schema.org LocalBusiness subtype counts. Listing only the home-service
+// ones made the scanner report correct HairSalon markup as missing.
+const LOCAL_TYPES = /^(LocalBusiness|HVACBusiness|Plumber|RoofingContractor|Electrician|HomeAndConstructionBusiness|GeneralContractor|HousePainter|Locksmith|MovingCompany|ProfessionalService|Store|Organization|HairSalon|BarberShop|BeautySalon|NailSalon|DaySpa|HealthAndBeautyBusiness|MedicalBusiness|Dentist|AutoRepair|AutomotiveBusiness|PestControlService|CleaningService|Electrician|FoodEstablishment|Restaurant|ChildCare|SelfStorage|EmploymentAgency|RealEstateAgent|LegalService|Attorney|AccountingService|FinancialService|TravelAgency|SportsActivityLocation|HealthClub|Physician|VeterinaryCare|HomeGoodsStore|Plumber)$/i;
 
 function esc(s) { return String(s == null ? '' : s); }
 function short(url) { try { const u = new URL(url); return (u.pathname === '/' ? u.host : u.pathname).slice(0, 60); } catch { return String(url).slice(0, 60); } }
@@ -259,4 +263,4 @@ function runChecks({ crawl, psi = null, local = null, biz = {} }) {
   return F;
 }
 
-module.exports = { runChecks, PHONE_RE, STREET_RE, FL_LICENSE };
+module.exports = { runChecks, PHONE_RE, STREET_RE, FL_LICENSE, LOCAL_TYPES, TRADE_WORDS };

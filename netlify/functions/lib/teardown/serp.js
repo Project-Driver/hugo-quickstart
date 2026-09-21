@@ -9,6 +9,7 @@ const TRADE_QUERY = {
   hvac: 'ac repair', plumbing: 'plumber', roofing: 'roofing contractor', electrical: 'electrician',
   'garage-doors': 'garage door repair', pool: 'pool service', 'pest-control': 'pest control',
   landscaping: 'landscaping', cleaning: 'house cleaning', 'general-contractor': 'general contractor',
+  barbershop: 'barber shop', salon: 'hair salon',
   other: 'contractor',
 };
 

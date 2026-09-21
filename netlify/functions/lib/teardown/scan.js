@@ -15,7 +15,7 @@ const { runChecks } = require('./checks');
 const { scoreFindings, sortFindings } = require('./score');
 const { buildPlan } = require('./plan');
 
-const TRADES = ['hvac', 'plumbing', 'roofing', 'electrical', 'garage-doors', 'pool', 'pest-control', 'landscaping', 'cleaning', 'general-contractor', 'other'];
+const TRADES = ['hvac', 'plumbing', 'roofing', 'electrical', 'garage-doors', 'pool', 'pest-control', 'landscaping', 'cleaning', 'general-contractor', 'barbershop', 'salon', 'other'];
 
 function newId() { return crypto.randomBytes(9).toString('base64url'); }
 function newKey() { return crypto.randomBytes(18).toString('base64url'); }

@@ -111,6 +111,36 @@ test('PageSpeed and local pack feed the checks and the score', async () => {
   assert.ok(!ids(F2).includes('not-in-local-pack'));
 });
 
+test('correct schema for a non-home-service business is not reported as missing', () => {
+  const { parsePage } = require('../netlify/functions/lib/teardown/crawl');
+  const { LOCAL_TYPES } = require('../netlify/functions/lib/teardown/checks');
+  const html = (type) => `<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width">
+<title>Bottima Barbershop, Fort Lauderdale</title><meta name="description" content="Barber in Fort Lauderdale.">
+<script type="application/ld+json">{"@type":"${type}","name":"Bottima"}</script></head>
+<body><h1>Bottima Barbershop</h1><a href="tel:+19545550100">(954) 555-0100</a><a href="/book">Book online</a>
+<p>Open Mon-Fri 9:00 am to 7:00 pm. 815 NE 13th St, Fort Lauderdale, FL 33304. Licensed since 2016. Rated 5 stars in reviews.</p></body></html>`;
+  const pageFor = (type) => parsePage({ url: 'https://bottima.test/', finalUrl: 'https://bottima.test/', status: 200, headers: { 'content-encoding': 'br' }, body: html(type), bytes: 900, ttfbMs: 90, totalMs: 120, redirects: [], error: null });
+  const crawlFor = (type) => {
+    const home = pageFor(type);
+    return { home, pages: [home], robots: { present: true, disallowsAll: false, sitemapLines: [] }, sitemap: { present: true, isIndex: false, urls: [] }, errors: [], httpProbe: { finalUrl: 'https://bottima.test/' }, notFoundStatus: 404, llmsTxt: true };
+  };
+  const missing = (type) => runChecks({ crawl: crawlFor(type), psi: null, local: null, biz: { name: 'Bottima', city: 'Fort Lauderdale', trade: 'barbershop' } })
+    .some((f) => f.id === 'no-localbusiness-schema');
+
+  assert.equal(missing('HairSalon'), false, 'HairSalon is a LocalBusiness subtype and must not be reported as missing');
+  assert.equal(missing('BarberShop'), false);
+  assert.equal(missing('Dentist'), false);
+  assert.equal(missing('WebPage'), true, 'a non-business type is still reported as missing');
+  assert.match('HairSalon', LOCAL_TYPES);
+});
+
+test('a barbershop report is not written for a homeowner', () => {
+  const { TRADE_WORDS } = require('../netlify/functions/lib/teardown/checks');
+  for (const trade of ['barbershop', 'salon', 'other']) {
+    assert.doesNotMatch(TRADE_WORDS[trade].problem, /homeowner|house|AC|roof/i, `${trade} wording still assumes a home service`);
+  }
+});
+
 test('sorting and the 30-day plan', () => {
   const F = [
     { id: 'a', category: 'access', severity: 'low', effort: 'quick', title: 'A', fix: 'fa' },
