@@ -57,6 +57,114 @@ Because that last case is common on small-business sites, the crawler identifies
 5. **Site.** `URL` is set by Netlify automatically. Set `TEARDOWN_RUNNER_SECRET` (any random string) so only the site can start background scans, and `TEARDOWN_CALL_URL` to the Diagnostic booking calendar for the $249 plan.
 6. **Netlify Blobs** is on by default for sites on the current build system; nothing to configure.
 
+## Where the HTML comes from
+
+The scanner reads a page through a *source*. A source is anything that returns
+the shape `fetchPage()` returns — `{ url, finalUrl, status, headers, body,
+bytes, ttfbMs, totalMs, redirects, error }` — so swapping one in changes
+nothing downstream: `crawl.js` still owns discovery, deduplication, priority
+and the concurrency pool, and the 69 rules in `checks.js` never learn where the
+HTML came from. Sources live in `netlify/functions/lib/teardown/sources/`.
+
+| `TEARDOWN_CRAWLER` | What it is | Renders JS | Markdown | Default URL |
+|---|---|---|---|---|
+| `native` (default) | the built-in `fetch` + cheerio path | no | no | — |
+| `firecrawl` | self-hosted Firecrawl, `POST /v1/scrape` | yes | yes | `http://127.0.0.1:3002` |
+| `crawl4ai` | self-hosted crawl4ai, `POST /crawl` | yes | yes | `http://127.0.0.1:11235` |
+
+`native` is the default, so the deployed Netlify site keeps working with no
+configuration at all. An unknown value is a hard error rather than a quiet
+fallback, because silently *not* rendering is the exact failure this is for.
+
+### Why it matters
+
+A raw GET does not run JavaScript, so on a Wix, Squarespace, React or Next.js
+site the scanner may be reading an empty shell and inventing findings. Against
+a three-page React fixture whose server sends `<div id="root"></div>`:
+
+| | `native` | rendering source |
+|---|---|---|
+| Score | 46/100, grade F | 77/100, grade C |
+| Findings | 23 (3 critical) | 12 (1 critical) |
+| Words on the homepage | 0 | 406 |
+
+Eleven findings vanished, and every one of them was false: `no-phone`,
+`no-address`, `city-not-mentioned`, `no-click-to-call`, `no-booking-path`,
+`duplicate-titles`, `missing-description`, `missing-h1`, `thin-pages`,
+`no-hours`, `no-trust-signals`. Nothing new appeared. That is a graded,
+billable report that was wrong about the site.
+
+### Environment
+
+| Variable | Meaning |
+|---|---|
+| `TEARDOWN_CRAWLER` | `native` (default), `firecrawl`, `crawl4ai` |
+| `TEARDOWN_CRAWLER_URL` | base URL of the crawler; defaults per the table above |
+| `TEARDOWN_CRAWLER_KEY` | bearer token, if yours needs one. `FIRECRAWL_API_KEY` / `CRAWL4AI_API_TOKEN` are read as fallbacks |
+| `TEARDOWN_CRAWLER_PATH` | override the endpoint path, e.g. `/v2/scrape` |
+| `TEARDOWN_CRAWLER_WAIT_MS` | extra settle time after load, for a slow client-side app |
+| `TEARDOWN_CRAWLER_TRANSPORT` | `hybrid` (default) or `crawler` |
+
+### Running it both ways
+
+```bash
+# the built-in fetcher, as always
+npm run teardown -- bottima.com \
+  --business "Bottima Barbershop" --city "Fort Lauderdale" --trade barbershop --max-pages 40
+
+# through the Docker crawler
+TEARDOWN_CRAWLER=firecrawl npm run teardown -- bottima.com \
+  --business "Bottima Barbershop" --city "Fort Lauderdale" --trade barbershop --max-pages 40
+```
+
+The second run prints which source it used before it starts crawling, and the
+scan record carries it as `result.source`, so a report can never be mistaken
+for a rendered scan when it was a raw fetch. If the two runs produce identical
+numbers, the crawler is not actually rendering — check it rather than assuming.
+
+### On `hybrid`
+
+A rendering crawler reports the DOM, not the wire: it usually cannot tell us
+`content-encoding`, the redirect chain or a true time to first byte. Left empty
+those read as *absent* to `checks.js`, which then invents "Pages are sent
+uncompressed" on a host that gzips perfectly well — a new false finding
+replacing the ones we just fixed. So `hybrid`, the default, fetches each page
+natively alongside the render and takes each half of the answer from the side
+that knows it: transport facts from the raw GET, rendered body and markdown
+from the crawler. It costs a second request per page, paced by the same
+five-at-a-time pool. Set `TEARDOWN_CRAWLER_TRANSPORT=crawler` to skip it and
+accept thinner headers. `bytes` stays the size of the document the host
+actually sent — scoring the rendered DOM there would invent a "heavy HTML"
+finding against a site whose download is a one-kilobyte shell — and the
+rendered size sits beside it as `renderedBytes`.
+
+Either way, only *pages* go to the crawler. `robots.txt`, sitemap XML,
+`llms.txt` and the HEAD/404 probes stay on the raw fetcher: they are not
+documents to render. The private-address guard still runs on the target URL
+before it is handed over, so pointing the crawler at internal infrastructure is
+refused exactly as before. If the crawler is down or refuses a page, the source
+falls back to the raw fetch and labels the result (`source`, `sourceFallback`)
+rather than failing the scan.
+
+### Markdown
+
+When the source returns markdown it is kept on the result and threaded through
+`parsePage()` onto `page.markdown`. Nothing reads it yet — it is additive, so
+nothing downstream changes — and it is the intended input for the AI judgment
+pass.
+
+### Per-URL scrape, not the crawler's own site crawl
+
+Both Firecrawl and crawl4ai can crawl a whole site themselves, and we
+deliberately do not use that. `crawl.js` already does discovery in the order
+that matters here: the sitemap first (on most small-business sites half the
+service and city pages are not linked from the homepage), then the homepage's
+links, deduplicated by canonical key and ranked so the pages that decide
+whether somebody calls come before the blog archive. A generic site crawl is
+breadth-first from the homepage and would drop exactly those pages. Their crawl
+mode would be worth revisiting only if we wanted a full-site sweep well beyond
+the 25-page cap, where one queued job would beat 25 round trips.
+
 ## Running a real scan from the command line
 
 ```bash
@@ -68,7 +176,7 @@ It prints the score, the category breakdown and every finding, then writes the f
 
 ## Testing without money
 
-- `npm test` runs 56 tests: the whole pipeline against two fixture websites (a neglected one and a good one), Stripe signature checks, and `test/teardown-live.test.js`, which starts a real HTTP server on loopback and exercises the actual network stack: gzip, 301 redirects, robots, soft 404s, request timeouts, a firewall that blocks the scanner and is retried as a browser, a site that blocks everything and must end up unsellable, pages reachable only through a sitemap index, a homepage served at five different addresses, icon links named by image alt or aria-label, and the concurrency cap.
+- `npm test` runs 71 tests: the whole pipeline against two fixture websites (a neglected one and a good one), Stripe signature checks, and `test/teardown-live.test.js`, which starts a real HTTP server on loopback and exercises the actual network stack: gzip, 301 redirects, robots, soft 404s, request timeouts, a firewall that blocks the scanner and is retried as a browser, a site that blocks everything and must end up unsellable, pages reachable only through a sitemap index, a homepage served at five different addresses, icon links named by image alt or aria-label, and the concurrency cap. `test/teardown-sources.test.js` covers the crawler sources against a stand-in crawler on loopback, so the suite never needs Docker running.
 - On the deployed site, run a scan; the free result shows without Stripe. To see the paid report for a scan without paying: `/api/teardown-report?id=<id>&key=<PITBOARD_PREVIEW_KEY>`.
 - Stripe test mode works end to end with a test card; the webhook can be sent from the Stripe dashboard.
 

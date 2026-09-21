@@ -49,7 +49,7 @@ async function runScan(record, { fetchImpl, lookup, log = () => {}, env = proces
   const biz = record.biz;
   try {
     const [crawl, psi, local] = await Promise.all([
-      crawlSite(biz.url, { fetchImpl, lookup, log, allowPrivate, ...(maxPages ? { maxPages } : {}) }),
+      crawlSite(biz.url, { fetchImpl, lookup, log, allowPrivate, env, ...(maxPages ? { maxPages } : {}) }),
       runPageSpeed(biz.url, { fetchImpl, apiKey: env.PAGESPEED_API_KEY }).catch((e) => ({ ok: false, error: e.message })),
       localPack(biz, { fetchImpl, apiKey: env.SERPAPI_KEY }).catch((e) => ({ ok: false, error: e.message })),
     ]);
@@ -79,6 +79,9 @@ async function runScan(record, { fetchImpl, lookup, log = () => {}, env = proces
     record.durationMs = Date.now() - started;
     record.result = {
       finalUrl: crawl.home.finalUrl,
+      // Which source read the HTML, so a report can never be mistaken for a
+      // rendered scan when it was a raw fetch, or the other way round.
+      source: crawl.home.source || 'native',
       pagesCrawled: crawl.pages.filter((p) => !p.error).length,
       knownPageCount: crawl.knownPageCount || crawl.pages.length,
       sitemapUrlCount: (crawl.sitemap && crawl.sitemap.urls.length) || 0,

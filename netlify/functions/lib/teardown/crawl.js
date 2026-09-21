@@ -8,6 +8,7 @@
 
 const cheerio = require('cheerio');
 const { fetchPage } = require('./fetcher');
+const { getSource } = require('./sources');
 
 const MAX_PAGES = 25;
 const CONCURRENCY = 5;
@@ -146,6 +147,10 @@ function parsePage(res) {
     text,
     wordCount: text ? text.split(' ').length : 0,
     html: res.body || '',
+    // Present only when the page came from a crawler that renders to markdown.
+    // Nothing downstream reads it yet; it is the input for the AI judgment pass.
+    markdown: res.markdown || '',
+    source: res.source || 'native',
   };
 }
 
@@ -200,10 +205,16 @@ async function pool(items, limit, worker) {
 /**
  * @returns {{home, pages, robots, sitemap, errors}}
  */
-async function crawlSite(startUrl, { fetchImpl, lookup, maxPages = MAX_PAGES, log = () => {}, allowPrivate = false } = {}) {
+async function crawlSite(startUrl, { fetchImpl, lookup, maxPages = MAX_PAGES, log = () => {}, allowPrivate = false, env = process.env, source } = {}) {
   const opts = { fetchImpl, lookup, allowPrivate };
+  // Pages are read through the configured source, which may render JavaScript.
+  // robots.txt, sitemap XML and the HEAD/404 probes stay on the raw fetcher:
+  // they are not documents to render, and a renderer would only mangle them.
+  const pageSource = source || getSource(env);
+  const readPage = (u, o) => pageSource.fetchPage(u, o || opts);
+  if (pageSource.name !== 'native') log(`reading pages with ${pageSource.describe()}`);
   const errors = [];
-  const homeRes = await fetchPage(startUrl, opts);
+  const homeRes = await readPage(startUrl);
   const home = parsePage(homeRes);
   if (homeRes.error || homeRes.status >= 400) {
     return {
@@ -277,7 +288,7 @@ async function crawlSite(startUrl, { fetchImpl, lookup, maxPages = MAX_PAGES, lo
 
   const targets = pickInternalPages(home, maxPages - 1, sitemapUrls);
   log(`crawling ${targets.length} of ${Math.max(targets.length, sitemapUrls.length)} known pages`);
-  const fetched = await pool(targets, CONCURRENCY, (u) => fetchPage(u, opts).then(parsePage).catch((e) => ({
+  const fetched = await pool(targets, CONCURRENCY, (u) => readPage(u).then(parsePage).catch((e) => ({
     url: u, finalUrl: u, status: 0, error: e.message,
     links: [], images: [], headings: [], h1s: [], jsonLd: [], forms: [], scripts: [], iframes: [], mixedContent: [], text: '', wordCount: 0,
   })));
