@@ -1,0 +1,18 @@
+# Project Driver video
+
+Pit Board promo reel made with [Remotion](https://remotion.dev): a vertical 1080×1920, 29-second video built in React and rendered to MP4.
+
+`pitboard-reel.mp4` is the current render.
+
+```bash
+npm install
+npm run studio   # live preview in the browser, scrub the timeline
+npm run render   # writes out/pitboard-reel.mp4
+```
+
+- `src/PitBoardReel.tsx` holds the six scenes: hook, 7 AM text, yesterday's numbers, money on the table, do this first, call to action.
+- Every number and name comes from `src/sample-board.json`, a copy of the site's `data/sample_board.json`. Pass a different board (for example a real client's, from `/api/board`) and the same reel renders for that business.
+- Colors and the logo match `themes/pitboard`. Fonts are bundled through `@fontsource`, so rendering needs no network.
+- In a container without Chrome, point Remotion at a headless shell: `npm run render -- --browser-executable=/path/to/headless_shell`.
+
+Remotion is free for individuals and companies of up to 3 people; larger companies need a license.

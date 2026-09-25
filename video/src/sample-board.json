@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "generatedAt": "2026-09-15T11:00:04.000Z",
+  "account": { "name": "Coastal Air & Heat", "locationId": "demo", "timeZone": "America/New_York" },
+  "dateLabel": "Monday, September 14",
+  "todayLabel": "Tuesday, September 15",
+  "lap": {
+    "callsIn": 14,
+    "missed": 4,
+    "recovered": 3,
+    "newLeads": 6,
+    "leadsBySource": { "Google": 3, "Website": 2, "Referral": 1 },
+    "booked": 5,
+    "textsIn": 11,
+    "textsOut": 17,
+    "medianReplyMinutes": 4
+  },
+  "baseline": { "callsPerDay": 11.3, "missedPerDay": 3.1 },
+  "week": { "callsIn": 79, "missed": 22, "recovered": 18, "textsIn": 64 },
+  "isMonday": false,
+  "score": 84,
+  "today": {
+    "count": 4,
+    "appointments": [
+      { "id": "a1", "time": "8:00a", "startTime": "2026-09-15T12:00:00.000Z", "name": "Dana Whitfield", "title": "AC not cooling", "address": "1420 NE 26th St, Wilton Manors", "link": "#" },
+      { "id": "a2", "time": "10:30a", "startTime": "2026-09-15T14:30:00.000Z", "name": "Marcus Bell", "title": "Maintenance plan visit", "address": "801 SW 9th Ave, Fort Lauderdale", "link": "#" },
+      { "id": "a3", "time": "1:00p", "startTime": "2026-09-15T17:00:00.000Z", "name": "Priya Raman", "title": "Estimate: 3-ton replacement", "address": "3300 N Ocean Blvd, Pompano Beach", "link": "#" },
+      { "id": "a4", "time": "3:30p", "startTime": "2026-09-15T19:30:00.000Z", "name": "Luis Ortega", "title": "Thermostat install", "address": "6100 Griffin Rd, Davie", "link": "#" }
+    ]
+  },
+  "moneyOnTheTable": [
+    { "kind": "missed-call", "label": "Missed call, no text back", "name": "(954) 555-0142", "detail": "Called 6:48p", "age": "16h", "link": "#", "priority": 1 },
+    { "kind": "waiting", "label": "Waiting on a reply", "name": "Keisha Thompson", "detail": "Can you do Thursday morning instead? Also is the $89 diagnostic waived if we do the repair", "age": "19h", "link": "#", "priority": 1 },
+    { "kind": "estimate", "label": "Estimate not booked", "name": "Robert Cline", "detail": "Estimate Sent · $6,400", "amount": 6400, "age": "5d", "link": "#", "priority": 2 },
+    { "kind": "estimate", "label": "Estimate not booked", "name": "Ana Ferreira", "detail": "Estimate Sent · $1,150", "amount": 1150, "age": "4d", "link": "#", "priority": 2 },
+    { "kind": "invoice", "label": "Invoice overdue", "name": "Sunrise Property Group", "detail": "#1187 · $2,340 · due Sep 8", "amount": 2340, "age": "7d", "link": "#", "priority": 2 }
+  ],
+  "moneyOnTheTableTotal": 5,
+  "unpaidTotal": 2340,
+  "doThis": "Text back the missed call nobody answered. Every hour lowers the odds they still need you.",
+  "warnings": []
+}
