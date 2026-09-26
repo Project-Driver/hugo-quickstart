@@ -1,0 +1,185 @@
+{
+  "site": {
+    "name": "Project Driver",
+    "source": "../",
+    "build": null,
+    "liveUrl": "https://project-driver.com"
+  },
+  "hideAll": [
+    "#lc_text-widget",
+    ".lc_text-widget",
+    "#pdsx-mfab",
+    ".pdsx-trigger",
+    "#pdsx-ov",
+    "#ast-scroll-top",
+    "[class*='pdsx']",
+    "button[aria-label*='earch']",
+    ".ast-search-icon"
+  ],
+  "shots": [
+    {
+      "id": "pd-hero",
+      "path": "/",
+      "preload": true,
+      "seconds": 5,
+      "actions": [
+        {
+          "wait": 1.0
+        },
+        {
+          "scrollBy": 40,
+          "seconds": 3
+        },
+        {
+          "wait": 1
+        }
+      ],
+      "focus": "h1",
+      "extract": {
+        "h1": "h1"
+      },
+      "hide": [
+        "header",
+        "#masthead",
+        ".ast-mobile-header-wrap",
+        ".ast-above-header-wrap"
+      ]
+    },
+    {
+      "id": "pd-areas",
+      "path": "/",
+      "preload": true,
+      "seconds": 8,
+      "actions": [
+        {
+          "scrollTo": "text=We plan it, build it, and run it",
+          "seconds": 0.6,
+          "block": "start"
+        },
+        {
+          "wait": 1.2
+        },
+        {
+          "scrollBy": 700,
+          "seconds": 3.2
+        },
+        {
+          "wait": 0.6
+        },
+        {
+          "scrollBy": 700,
+          "seconds": 1.8
+        },
+        {
+          "wait": 0.6
+        }
+      ],
+      "focus": "text=Operations",
+      "extract": {},
+      "hide": [
+        "header",
+        "#masthead",
+        ".ast-mobile-header-wrap",
+        ".ast-above-header-wrap"
+      ]
+    },
+    {
+      "id": "pd-pillars",
+      "path": "/",
+      "preload": true,
+      "seconds": 5,
+      "actions": [
+        {
+          "scrollTo": "text=Marketing brings them in",
+          "seconds": 0.6,
+          "block": "start"
+        },
+        {
+          "wait": 1.4
+        },
+        {
+          "scrollBy": 120,
+          "seconds": 2
+        },
+        {
+          "wait": 1
+        }
+      ],
+      "focus": "text=Marketing brings them in",
+      "extract": {},
+      "hide": [
+        "header",
+        "#masthead",
+        ".ast-mobile-header-wrap",
+        ".ast-above-header-wrap"
+      ]
+    },
+    {
+      "id": "pd-results",
+      "path": "/results/",
+      "preload": true,
+      "seconds": 7,
+      "actions": [
+        {
+          "wait": 0.8
+        },
+        {
+          "scrollTo": "text=RGDS",
+          "seconds": 1.6,
+          "block": "start"
+        },
+        {
+          "wait": 1.2
+        },
+        {
+          "scrollBy": 500,
+          "seconds": 2.4
+        },
+        {
+          "wait": 1
+        }
+      ],
+      "focus": "text=RGDS",
+      "extract": {
+        "resultsH1": "h1"
+      },
+      "hide": [
+        "header",
+        "#masthead",
+        ".ast-mobile-header-wrap",
+        ".ast-above-header-wrap"
+      ]
+    },
+    {
+      "id": "pd-book",
+      "path": "/",
+      "preload": true,
+      "seconds": 5,
+      "actions": [
+        {
+          "scrollTo": "text=make your business run smoother",
+          "seconds": 0.6,
+          "block": "start"
+        },
+        {
+          "wait": 1.2
+        },
+        {
+          "scrollBy": 260,
+          "seconds": 2.2
+        },
+        {
+          "wait": 1
+        }
+      ],
+      "focus": "text=make your business run smoother",
+      "extract": {},
+      "hide": [
+        "header",
+        "#masthead",
+        ".ast-mobile-header-wrap",
+        ".ast-above-header-wrap"
+      ]
+    }
+  ]
+}

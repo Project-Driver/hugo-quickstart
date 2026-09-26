@@ -2,6 +2,7 @@ import {Composition, staticFile} from 'remotion';
 import {PitBoardReel, REEL_FRAMES} from './PitBoardReel';
 import {WalkthroughReel, type Plan} from './WalkthroughReel';
 import {Spot, SPOT_FRAMES, type SpotAssets} from './Spot';
+import {PdSpot, PD_FRAMES, type PdAssets} from './PdSpot';
 import board from './sample-board.json';
 
 // A stand-in plan so the composition registers before any capture has run.
@@ -27,8 +28,30 @@ async function spotAssets(): Promise<SpotAssets> {
   };
 }
 
+// The project-driver.com spot: its captures, and the read in public/audio/pd-vo.mp3.
+async function pdAssets(): Promise<PdAssets> {
+  const meta = await fetch(staticFile('captures/meta.json')).then((r) => r.json());
+  const has = async (p: string) => (await fetch(staticFile(p), {method: 'HEAD'})).ok;
+  const opt = async (p: string) => ((await has(p)) ? p : undefined);
+  const s = meta.shots;
+  return {
+    captures: {hero: s['pd-hero'].file, areas: s['pd-areas'].file, pillars: s['pd-pillars'].file, results: s['pd-results'].file, book: s['pd-book'].file, width: meta.width, height: meta.height, resultsFocus: null},
+    audio: {vo: await opt('audio/pd-vo.mp3'), music: await opt('audio/pd-music.mp3')},
+  };
+}
+
 export const Root: React.FC = () => (
   <>
+    <Composition
+      id="PdSpot"
+      component={PdSpot}
+      durationInFrames={PD_FRAMES}
+      fps={30}
+      width={1080}
+      height={1920}
+      defaultProps={{assets: {captures: {hero: '', areas: '', pillars: '', results: '', book: '', width: 1080, height: 2336, resultsFocus: null}, audio: {}} as PdAssets}}
+      calculateMetadata={async () => ({props: {assets: await pdAssets()}})}
+    />
     <Composition
       id="Spot"
       component={Spot}
