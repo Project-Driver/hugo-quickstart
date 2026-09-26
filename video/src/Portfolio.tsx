@@ -65,7 +65,7 @@ const Invisible: React.FC<{assets: PortfolioAssets}> = ({assets}) => {
       <Camera length={sec(3.8)} from={1.0} to={1.07}>
         <AbsoluteFill style={{filter: `brightness(${bright})`}}>
           <Phone rx={7} ry={-14} glow={0.2} sweepAt={sec(1.9)} width={560} y={-160}>
-            <Screen src={assets.captures.bottima.file} width={560} captureWidth={assets.captures.width} captureHeight={assets.captures.height} startFrom={sec(1)} />
+            <Screen src={assets.captures.rgds.file} width={560} captureWidth={assets.captures.width} captureHeight={assets.captures.height} startFrom={sec(1)} />
           </Phone>
         </AbsoluteFill>
       </Camera>
@@ -79,10 +79,9 @@ const Invisible: React.FC<{assets: PortfolioAssets}> = ({assets}) => {
 const Sites: React.FC<{assets: PortfolioAssets}> = ({assets}) => {
   const f = useCurrentFrame();
   const shots: {c: Capture; name: string; url: string; from: number; len: number; ry: [number, number]; start: number}[] = [
-    {c: assets.captures.rgds, name: 'RGDS Garage Doors', url: 'residentialgaragedoorservice.net', from: 0, len: 3.0, ry: [-12, -4], start: sec(2.5)},
-    {c: assets.captures.hmr, name: 'Historic Miami Rentals', url: 'historicmiamirentals.com', from: 3.0, len: 2.7, ry: [8, 2], start: sec(2.5)},
-    {c: assets.captures.bottima, name: 'Bottima Barbershop', url: 'bottima.com', from: 5.7, len: 2.5, ry: [-6, 0], start: sec(9)},
-    {c: assets.captures.pd, name: 'Project Driver', url: 'project-driver.com', from: 8.2, len: 2.3, ry: [6, -2], start: sec(2.5)},
+    {c: assets.captures.rgds, name: 'RGDS Garage Doors', url: 'residentialgaragedoorservice.net', from: 0, len: 3.7, ry: [-12, -4], start: sec(2.5)},
+    {c: assets.captures.hmr, name: 'Historic Miami Rentals', url: 'historicmiamirentals.com', from: 3.7, len: 3.5, ry: [8, 2], start: sec(2.5)},
+    {c: assets.captures.pd, name: 'Project Driver', url: 'project-driver.com', from: 7.2, len: 3.3, ry: [6, -2], start: sec(2.5)},
   ];
   return (
     <AbsoluteFill style={{background: C.bg}}>
