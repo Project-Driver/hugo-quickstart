@@ -85,6 +85,19 @@ async function main() {
 async function record(browser, base, shot, outDir, list) {
   // Live sites come through the session's proxy, which re-signs TLS; trust it.
   const ctx = await browser.newContext({viewport: VIEW, deviceScaleFactor: SCALE, reducedMotion: 'no-preference', ignoreHTTPSErrors: true});
+  // Some hosts (an image CDN, a font host) fail TLS in Chrome through the session proxy while curl reaches
+  // them fine. List them in site.viaCurl (hostname suffixes) and their requests are fetched by curl instead.
+  const viaCurl = list.site.viaCurl || [];
+  if (viaCurl.length) {
+    await ctx.route((u) => viaCurl.some((h) => u.hostname === h || u.hostname.endsWith('.' + h)), async (route) => {
+      const req = route.request();
+      try {
+        const out = execFileSync('curl', ['-sS', '-L', '-m', '40', '-w', '\n%{content_type}', '-A', (await req.headerValue('user-agent')) || 'Mozilla/5.0', req.url()], {maxBuffer: 64 * 1024 * 1024});
+        const nl = out.lastIndexOf(10);
+        await route.fulfill({status: 200, body: out.subarray(0, nl), headers: {'content-type': out.subarray(nl + 1).toString().trim() || 'application/octet-stream', 'access-control-allow-origin': '*'}});
+      } catch { await route.abort(); }
+    });
+  }
   const page = await ctx.newPage();
   // The session proxy occasionally drops a connect; try a few times before giving up.
   for (let attempt = 1; ; attempt++) {

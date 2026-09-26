@@ -87,13 +87,13 @@ const Sites: React.FC<{assets: PortfolioAssets}> = ({assets}) => {
   return (
     <AbsoluteFill style={{background: C.bg}}>
       <Dawn strength={0.18} color={BLUE} />
-      <Line at={0.15} hold={2.8} size={68} y={300}><b style={{fontWeight: 800}}>So we built</b> the websites.</Line>
+      <Line at={0.15} hold={2.8} size={64} y={150}><b style={{fontWeight: 800}}>So we built</b> the websites.</Line>
       {shots.map((s, i) => (
         <Sequence key={s.name} from={sec(s.from)} durationInFrames={sec(s.len) + XF}>
           <Fade length={sec(s.len) + XF}>
             <Camera length={sec(s.len)} from={1.02} to={1.09}>
-              <Phone rx={4} ry={interpolate(f - sec(s.from), [0, sec(s.len)], s.ry, clamp)} glow={0.4} sweepAt={12} width={580} y={-120}>
-                <Screen src={s.c.file} width={580} captureWidth={assets.captures.width} captureHeight={assets.captures.height} startFrom={s.start} />
+              <Phone rx={4} ry={interpolate(f - sec(s.from), [0, sec(s.len)], s.ry, clamp)} glow={0.4} sweepAt={12} width={540} y={-60}>
+                <Screen src={s.c.file} width={540} captureWidth={assets.captures.width} captureHeight={assets.captures.height} startFrom={s.start} />
               </Phone>
             </Camera>
             <Label name={s.name} url={s.url} at={0.15} hold={s.len - 0.1} />
@@ -209,7 +209,7 @@ const Numbers: React.FC<{assets: PortfolioAssets}> = ({assets}) => {
         </Phone>
       </Camera>
       <Line at={0.15} hold={1.8} size={62} y={1500}>And then we watched <b style={{fontWeight: 800}}>the numbers move.</b></Line>
-      <div style={{position: 'absolute', left: 60, right: 60, top: 300, padding: '40px 44px', borderRadius: 32, background: 'rgba(5,5,6,.86)', boxShadow: '0 30px 80px rgba(0,0,0,.6)', opacity: panel, fontFamily: sans}}>
+      <div style={{position: 'absolute', left: 60, right: 60, top: 300, padding: '40px 44px', borderRadius: 32, background: 'rgba(5,5,6,.95)', backdropFilter: 'blur(24px)', boxShadow: '0 30px 80px rgba(0,0,0,.7)', opacity: panel, fontFamily: sans}}>
         <div style={{fontSize: 26, color: C.muted, letterSpacing: 3, fontFamily: mono, marginBottom: 26}}>RGDS GARAGE DOORS · FIRST 90 DAYS</div>
         <Stat at={2.0} value={356} prefix="+" suffix="%" label="more calls from Google" big />
         <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 30, marginTop: 34}}>
@@ -217,7 +217,7 @@ const Numbers: React.FC<{assets: PortfolioAssets}> = ({assets}) => {
           <Stat at={5.2} value={1555} label="keywords ranking" />
         </div>
         <div style={{opacity: chart, marginTop: 40}}>
-          <div style={{fontSize: 26, color: C.muted, letterSpacing: 3, fontFamily: mono, marginBottom: 14}}>PROJECT-DRIVER.COM · SEARCH VISITS, JUNE → JULY</div>
+          <div style={{fontSize: 26, color: C.muted, letterSpacing: 3, fontFamily: mono, marginBottom: 14}}>PROJECT-DRIVER.COM · GOOGLE VISITS, JUNE TO JULY</div>
           <svg width={w} height={h + 10} style={{overflow: 'visible'}}>
             <defs>
               <linearGradient id="pfg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor={BLUE} stopOpacity="0.35" /><stop offset="1" stopColor={BLUE} stopOpacity="0" /></linearGradient>

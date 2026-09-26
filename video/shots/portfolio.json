@@ -4,7 +4,10 @@
     "source": "../",
     "build": null,
     "liveUrl": "",
-    "settle": 3.5
+    "settle": 3.5,
+    "viaCurl": [
+      "pagecloud.com"
+    ]
   },
   "shots": [
     {
@@ -12,26 +15,58 @@
       "url": "https://project-driver.com/",
       "preload": true,
       "actions": [
-        {"wait": 2.5},
-        {"scrollBy": 900, "seconds": 5},
-        {"wait": 1.5},
-        {"scrollBy": 1100, "seconds": 5.5},
-        {"wait": 1.5},
-        {"scrollBy": 1100, "seconds": 5.5},
-        {"wait": 2}
+        {
+          "wait": 2.5
+        },
+        {
+          "scrollBy": 900,
+          "seconds": 5
+        },
+        {
+          "wait": 1.5
+        },
+        {
+          "scrollBy": 1100,
+          "seconds": 5.5
+        },
+        {
+          "wait": 1.5
+        },
+        {
+          "scrollBy": 1100,
+          "seconds": 5.5
+        },
+        {
+          "wait": 2
+        }
       ],
-      "extract": {"h1": "h1"}
+      "extract": {
+        "h1": "h1"
+      }
     },
     {
       "id": "pf-pd-results",
       "url": "https://project-driver.com/results/",
       "preload": true,
       "actions": [
-        {"wait": 2},
-        {"scrollTo": "text=RGDS", "seconds": 3, "block": "start"},
-        {"wait": 2.5},
-        {"scrollBy": 700, "seconds": 5},
-        {"wait": 2}
+        {
+          "wait": 2
+        },
+        {
+          "scrollTo": "text=RGDS",
+          "seconds": 3,
+          "block": "start"
+        },
+        {
+          "wait": 2.5
+        },
+        {
+          "scrollBy": 700,
+          "seconds": 5
+        },
+        {
+          "wait": 2
+        }
       ],
       "focus": "text=RGDS"
     },
@@ -40,51 +75,128 @@
       "url": "https://www.residentialgaragedoorservice.net/",
       "preload": true,
       "actions": [
-        {"wait": 2.5},
-        {"scrollBy": 900, "seconds": 5},
-        {"wait": 1.5},
-        {"scrollTo": "text=Garage Door Services", "seconds": 3, "block": "start"},
-        {"wait": 2},
-        {"scrollBy": 1200, "seconds": 6},
-        {"wait": 1.5},
-        {"scrollTo": "text=Google Reviews", "seconds": 3, "block": "start"},
-        {"wait": 2.5}
+        {
+          "wait": 2.5
+        },
+        {
+          "scrollBy": 900,
+          "seconds": 5
+        },
+        {
+          "wait": 1.5
+        },
+        {
+          "scrollTo": "text=Garage Door Services",
+          "seconds": 3,
+          "block": "start"
+        },
+        {
+          "wait": 2
+        },
+        {
+          "scrollBy": 1200,
+          "seconds": 6
+        },
+        {
+          "wait": 1.5
+        },
+        {
+          "scrollTo": "text=Google Reviews",
+          "seconds": 3,
+          "block": "start"
+        },
+        {
+          "wait": 2.5
+        }
       ],
-      "extract": {"h1": "h1"}
+      "extract": {
+        "h1": "h1"
+      }
     },
     {
       "id": "pf-hmr",
       "url": "https://historicmiamirentals.com/",
       "preload": true,
       "actions": [
-        {"wait": 2.5},
-        {"scrollBy": 900, "seconds": 5},
-        {"wait": 1.5},
-        {"scrollTo": "text=Miami And The Beaches", "seconds": 3, "block": "start"},
-        {"wait": 2},
-        {"scrollBy": 1200, "seconds": 6},
-        {"wait": 1.5},
-        {"scrollTo": "text=WHY historic miami", "seconds": 3, "block": "start"},
-        {"wait": 2.5}
+        {
+          "wait": 2.5
+        },
+        {
+          "scrollBy": 900,
+          "seconds": 5
+        },
+        {
+          "wait": 1.5
+        },
+        {
+          "scrollTo": "text=Miami And The Beaches",
+          "seconds": 3,
+          "block": "start"
+        },
+        {
+          "wait": 2
+        },
+        {
+          "scrollBy": 1200,
+          "seconds": 6
+        },
+        {
+          "wait": 1.5
+        },
+        {
+          "scrollTo": "text=WHY historic miami",
+          "seconds": 3,
+          "block": "start"
+        },
+        {
+          "wait": 2.5
+        }
       ],
-      "extract": {"h1": "h1"}
+      "extract": {
+        "h1": "h1"
+      }
     },
     {
       "id": "pf-bottima",
       "url": "https://www.bottima.com/",
       "preload": true,
       "actions": [
-        {"wait": 2.5},
-        {"scrollBy": 900, "seconds": 5},
-        {"wait": 1.5},
-        {"scrollBy": 1200, "seconds": 6},
-        {"wait": 1.5},
-        {"scrollTo": "text=Piter Botta", "seconds": 3, "block": "start"},
-        {"wait": 2},
-        {"scrollBy": 900, "seconds": 5},
-        {"wait": 2}
+        {
+          "wait": 2.5
+        },
+        {
+          "scrollBy": 900,
+          "seconds": 5
+        },
+        {
+          "wait": 1.5
+        },
+        {
+          "scrollBy": 1200,
+          "seconds": 6
+        },
+        {
+          "wait": 1.5
+        },
+        {
+          "scrollTo": "text=Piter Botta",
+          "seconds": 3,
+          "block": "start"
+        },
+        {
+          "wait": 2
+        },
+        {
+          "scrollBy": 900,
+          "seconds": 5
+        },
+        {
+          "wait": 2
+        }
       ],
-      "extract": {"h1": "h1"}
+      "extract": {
+        "h1": "h1"
+      }
     }
   ]
 }
