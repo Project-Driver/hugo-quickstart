@@ -1,0 +1,144 @@
+{
+  "site": {
+    "name": "Pit Board",
+    "source": "../",
+    "build": "hugo",
+    "liveUrl": "https://pitboard.project-driver.com"
+  },
+  "shots": [
+    {
+      "id": "home-hero",
+      "path": "/",
+      "seconds": 4,
+      "actions": [
+        {
+          "wait": 0.6
+        },
+        {
+          "scrollTo": ".hero-board",
+          "seconds": 2.4
+        },
+        {
+          "wait": 1
+        }
+      ],
+      "focus": ".phone",
+      "extract": {
+        "headline": ".hero h1",
+        "eyebrow": ".hero .eyebrow",
+        "lead": ".hero .lead",
+        "cta": ".hero .btn-yellow"
+      }
+    },
+    {
+      "id": "home-board",
+      "path": "/sample/",
+      "seconds": 7,
+      "actions": [
+        {
+          "scrollTo": ".board .stats",
+          "seconds": 1.2
+        },
+        {
+          "wait": 1
+        },
+        {
+          "scrollTo": ".board .dothis",
+          "seconds": 1.4
+        },
+        {
+          "wait": 0.8
+        },
+        {
+          "scrollTo": ".board .table",
+          "seconds": 1.4
+        },
+        {
+          "wait": 1.2
+        }
+      ],
+      "focus": ".board .table",
+      "extract": {
+        "score": ".board .score b",
+        "doThis": ".board .dothis p",
+        "money": ".board .board-label:nth-of-type(2)"
+      }
+    },
+    {
+      "id": "home-money",
+      "path": "/sample/",
+      "seconds": 5,
+      "actions": [
+        {
+          "scrollTo": ".board .table",
+          "seconds": 0.8,
+          "block": "start"
+        },
+        {
+          "wait": 1.4
+        },
+        {
+          "scrollBy": 40,
+          "seconds": 1.6
+        },
+        {
+          "wait": 1.2
+        }
+      ],
+      "focus": ".board .table li:first-child",
+      "extract": {
+        "firstRow": ".board .table li:first-child .row-name",
+        "firstLabel": ".board .table li:first-child .row-label"
+      }
+    },
+    {
+      "id": "pricing",
+      "path": "/pricing/",
+      "seconds": 5,
+      "actions": [
+        {
+          "scrollTo": ".plan.featured",
+          "seconds": 1.4,
+          "block": "start"
+        },
+        {
+          "wait": 1
+        },
+        {
+          "scrollBy": 60,
+          "seconds": 1.6
+        },
+        {
+          "wait": 1
+        }
+      ],
+      "focus": ".plan.featured .price",
+      "extract": {
+        "featuredPlan": ".plan.featured h3",
+        "featuredPrice": ".plan.featured .price",
+        "firstPrice": ".plan:first-child .price"
+      }
+    },
+    {
+      "id": "start",
+      "path": "/start/",
+      "seconds": 4,
+      "actions": [
+        {
+          "wait": 0.6
+        },
+        {
+          "scrollTo": "form",
+          "seconds": 1.6
+        },
+        {
+          "wait": 1.8
+        }
+      ],
+      "focus": "form",
+      "extract": {
+        "startHeadline": "h1"
+      }
+    }
+  ]
+}

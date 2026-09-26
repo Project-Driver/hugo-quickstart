@@ -1,8 +1,11 @@
 # Project Driver video
 
-Pit Board promo reel made with [Remotion](https://remotion.dev): a vertical 1080×1920, 29-second video built in React and rendered to MP4.
+Reels for Project Driver products, made with [Remotion](https://remotion.dev): vertical 1080×1920 MP4s built in React.
 
-`pitboard-reel.mp4` is the current render.
+Two kinds:
+
+- **Walkthrough reel** (`WalkthroughReel`): real footage of the site, captured by driving a browser through it, cut to a conversion structure. `node scripts/reel.mjs shots/pitboard.json strategy/cold-owner.json` builds the site, records it, plans the cut and renders `out/cold-owner.mp4`. See `.claude/skills/make-reel/SKILL.md` for how the pieces fit.
+- **Data reel** (`PitBoardReel`): text and numbers only, no footage. `pitboard-reel.mp4` is the current render.
 
 ```bash
 npm install

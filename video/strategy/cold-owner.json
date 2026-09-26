@@ -1,0 +1,17 @@
+{
+  "id": "cold-owner",
+  "audience": "Home-service owners who have never heard of Pit Board",
+  "structure": "hook (a pain number) → what it is → walkthrough → the money → price → CTA",
+  "scenes": [
+    { "kind": "hook", "seconds": 3.0, "over": "home-hero",
+      "lines": ["Yesterday,", "{{missed}} calls went unanswered.", "Do you know who they were?"] },
+    { "kind": "clip", "shot": "home-hero", "caption": "There's a board that catches them." },
+    { "kind": "clip", "shot": "home-board", "caption": "Every morning at 7. Your calls, your leads, your money.", "punchIn": true },
+    { "kind": "clip", "shot": "home-money", "caption": "{{firstLabel}}. One tap to fix it.", "punchIn": true },
+    { "kind": "clip", "shot": "pricing", "caption": "From {{firstPrice}}. No new app to open.", "punchIn": true },
+    { "kind": "clip", "shot": "start", "caption": "{{startHeadline}}." },
+    { "kind": "cta", "seconds": 4.0,
+      "headline": "Your business on one board, every morning at 7.",
+      "button": "{{cta}}", "footer": "From {{firstPrice}} · pitboard.project-driver.com" }
+  ]
+}

@@ -17,6 +17,7 @@
   },
   "devDependencies": {
     "@types/react": "19.1.0",
+    "hugo-extended": "0.101.0",
     "typescript": "5.9.2"
   }
 }
