@@ -1,0 +1,75 @@
+# Renders one client reel on demand. n8n (or anyone) triggers it with a plan;
+# the job records the read, renders, checks frames, and uploads the mp4 to the
+# client's HighLevel media library. Secrets live in the repository settings:
+#   ELEVENLABS_API_KEY, HIGHLEVEL_API_KEY
+#
+# Trigger from n8n with an HTTP Request node:
+#   POST https://api.github.com/repos/<owner>/<repo>/actions/workflows/reel.yml/dispatches
+#   {"ref":"main","inputs":{"plan":"<plan JSON as a string>","plan_id":"rgds-storm-2026-09-29"}}
+# then poll the run and read the uploaded URL from the job summary.
+
+name: Render a client reel
+
+on:
+  workflow_dispatch:
+    inputs:
+      plan:
+        description: 'The reel plan as JSON (client, scenes, script, phrases)'
+        required: true
+        type: string
+      plan_id:
+        description: 'A short id for the output file'
+        required: true
+        type: string
+      upload:
+        description: 'Upload to the client HighLevel media library'
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: video
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: video/package-lock.json
+      - name: Install
+        run: npm ci --no-audit --no-fund
+      - name: Browser for Remotion and the recorder
+        run: npx playwright-core install chromium chromium-headless-shell --with-deps 2>/dev/null || npx remotion browser ensure
+      - name: Write the plan
+        run: |
+          mkdir -p plans
+          printf '%s' "$PLAN" > "plans/${PLAN_ID}.json"
+          node -e "JSON.parse(require('fs').readFileSync('plans/${PLAN_ID}.json','utf8'))"
+        env:
+          PLAN: ${{ inputs.plan }}
+          PLAN_ID: ${{ inputs.plan_id }}
+      - name: Produce
+        run: node scripts/produce.mjs "plans/${PLAN_ID}.json" --out "out/${PLAN_ID}.mp4" ${{ inputs.upload && '--upload' || '' }} | tee produce.log
+        env:
+          PLAN_ID: ${{ inputs.plan_id }}
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          HIGHLEVEL_API_KEY: ${{ secrets.HIGHLEVEL_API_KEY }}
+          CHROME_HEADLESS_SHELL: ''
+      - name: Summary
+        run: |
+          echo "## Reel ${PLAN_ID}" >> "$GITHUB_STEP_SUMMARY"
+          grep -E '^\{' produce.log | tail -1 >> "$GITHUB_STEP_SUMMARY" || true
+        env:
+          PLAN_ID: ${{ inputs.plan_id }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.plan_id }}
+          path: |
+            video/out/${{ inputs.plan_id }}.mp4
+            video/out/${{ inputs.plan_id }}-frames/
+          retention-days: 14

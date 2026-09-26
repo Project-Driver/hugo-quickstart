@@ -1,0 +1,39 @@
+{
+  "id": "rgds",
+  "name": "Residential Garage Door Service",
+  "short": "RGDS",
+  "ghlLocationId": "x9T4gGVAbgz53dFvlJpE",
+  "site": "https://www.residentialgaragedoorservice.net/",
+  "phone": "(561) 747-3332",
+  "phoneSpoken": "five six one, seven four seven, thirty-three thirty-two",
+  "area": "Palm Beach · Martin · St. Lucie",
+  "city": "Jupiter, FL",
+  "brand": {
+    "primary": "#e11b14",
+    "accent": "#f5b62b",
+    "dark": "#141314",
+    "light": "#fbfbfb",
+    "font": "Albert Sans",
+    "logo": "clients/rgds/logo.png"
+  },
+  "voice": {"id": "t0eCaS57KWbQQc1wRkah", "name": "Russ", "model": "eleven_v3"},
+  "music": "A confident, blue-collar cinematic bed: low driving drum pulse, gritty guitar or bass motif, tension building, strong resolved ending. No vocals. Around 100 BPM.",
+  "goal": "More service calls and door installs from homeowners in Palm Beach, Martin and St. Lucie counties.",
+  "audience": "Homeowners 35 to 65 in Jupiter and the Palm Beaches who notice a garage door only when it fails.",
+  "proof": ["20+ years of experience", "5-star rated service", "Same-day service", "Family owned, Jupiter FL", "Emergency services available"],
+  "neverSay": ["Project Driver", "invented prices", "invented reviews", "guarantees the site does not make"],
+  "close": {"line": "Call (561) 747-3332", "sub": "Same-day service · Palm Beach to the Treasure Coast"},
+  "cadence": "Three reels a week: Monday education or storm prep, Wednesday a job or before-and-after, Friday a review.",
+  "formats": [
+    {"id": "storm", "name": "Storm prep", "seconds": 20, "hook": "Your garage door is the biggest opening in your home.", "footage": "brand film, hurricane carousel, impact door photos", "close": "call"},
+    {"id": "job", "name": "The job", "seconds": 12, "hook": "One problem, one fix.", "footage": "brand film cut to the problem: spring, off-track, opener", "close": "call"},
+    {"id": "before-after", "name": "Before and after", "seconds": 10, "hook": "Same house. One new door.", "footage": "before-and-after post images", "close": "send a photo"},
+    {"id": "review", "name": "The review", "seconds": 15, "hook": "A real five-star review read aloud.", "footage": "brand film van and driveway", "close": "call"}
+  ],
+  "sources": {
+    "film": "broll/rgds-brand.mp4",
+    "mediaLibrary": "HighLevel media library for location x9T4gGVAbgz53dFvlJpE (reels, memes, carousels, logo)",
+    "posts": "HighLevel Social Planner published posts (captions and carousel images)",
+    "numbers": "project-driver.com/results (RGDS 90-day results) for the portfolio only; never in RGDS's own reels"
+  }
+}

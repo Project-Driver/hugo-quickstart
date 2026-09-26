@@ -1,0 +1,165 @@
+{
+  "name": "Client reel · weekly (RGDS) · DRAFT",
+  "nodes": [
+    {
+      "parameters": {"rule": {"interval": [{"field": "weeks", "triggerAtDay": [1], "triggerAtHour": 6}]}},
+      "id": "schedule",
+      "name": "Monday 6am",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "url": "https://raw.githubusercontent.com/Project-Driver/hugo-quickstart/main/video/clients/rgds.json",
+        "options": {}
+      },
+      "id": "client",
+      "name": "Client config",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [220, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://services.leadconnectorhq.com/social-media-posting/{{ $json.ghlLocationId }}/posts/list",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "highLevelOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {"parameters": [{"name": "Version", "value": "2021-07-28"}]},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"type\":\"published\",\"skip\":\"0\",\"limit\":\"10\",\"fromDate\":\"{{ $now.minus({days: 30}).toISO() }}\",\"toDate\":\"{{ $now.toISO() }}\",\"includeUsers\":\"false\"}",
+        "options": {}
+      },
+      "id": "posts",
+      "name": "Recent posts (HighLevel)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [440, 0]
+    },
+    {
+      "parameters": {
+        "url": "=https://services.leadconnectorhq.com/medias/files?altType=location&altId={{ $('Client config').item.json.ghlLocationId }}&type=file&sortBy=createdAt&sortOrder=desc&limit=30",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "highLevelOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {"parameters": [{"name": "Version", "value": "2021-07-28"}]},
+        "options": {}
+      },
+      "id": "media",
+      "name": "Media library (HighLevel)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [660, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {"parameters": [{"name": "anthropic-version", "value": "2023-06-01"}, {"name": "content-type", "value": "application/json"}]},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  model: 'claude-opus-5',\n  max_tokens: 16000,\n  system: 'You write 15 to 22 second vertical reels for a local business, as a plan the render worker executes. Reply with JSON only, matching the schema in the user message. Rules: one idea per scene; hook in the first line; every claim must appear in the client config or the posts; never invent a review, a price or a result; never mention Project Driver; close on the client phone number; keep each line under 9 words; pick the format that has not run most recently.',\n  messages: [{role: 'user', content: 'CLIENT CONFIG:\\n' + JSON.stringify($(\"Client config\").item.json) + '\\n\\nRECENT POSTS (captions and media):\\n' + JSON.stringify($(\"Recent posts (HighLevel)\").item.json.results?.posts?.map(p => ({date: p.publishedAt, platform: p.platform, summary: p.summary, media: p.media?.map(m => m.url)})) ) + '\\n\\nMEDIA LIBRARY (files you may use as src, by url):\\n' + JSON.stringify($(\"Media library (HighLevel)\").item.json.files?.map(f => ({name: f.name, url: f.url, type: f.contentType, w: f.width, h: f.height}))) + '\\n\\nSCHEMA: {\"id\": string, \"format\": string, \"seconds\": number, \"client\": {short,name,phone,area,brand,close,ghlLocationId}, \"script\": string (the full read, one sentence per phrase, separated by blank lines), \"phrases\": [{\"text\": string, \"at\": seconds}], \"musicPrompt\": string, \"caption\": string (post caption with hashtags), \"scenes\": [{\"type\": \"clip\"|\"image\"|\"stats\"|\"end\", \"src\"?: url, \"start\"?: seconds, \"zoom\"?: number, \"position\"?: css object-position, \"fit\"?: \"cover\"|\"contain\", \"from\": seconds, \"to\": seconds, \"lines\"?: [{\"at\": seconds from scene start, \"hold\": seconds, \"text\": string, \"size\"?: number, \"accent\"?: boolean}], \"items\"?: [{\"big\": string, \"small\": string}]}]}. The last scene is type end. Phrase at-times must fall inside the scene that shows that line.'}]\n}) }}",
+        "options": {}
+      },
+      "id": "claude",
+      "name": "Write the plan (Claude API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [880, 0],
+      "notesInFlow": true,
+      "notes": "Header auth credential: x-api-key = Anthropic API key. The reply is the plan JSON."
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $input.first().json.content.map(b => b.text || '').join('');\nconst plan = JSON.parse(text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1));\nplan.id = `${plan.client.short.toLowerCase()}-${plan.format}-${$now.toFormat('yyyy-LL-dd')}`;\nreturn [{json: {plan, plan_id: plan.id}}];"
+      },
+      "id": "parse",
+      "name": "Parse plan",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1100, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.github.com/repos/Project-Driver/hugo-quickstart/actions/workflows/reel.yml/dispatches",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {"parameters": [{"name": "Accept", "value": "application/vnd.github+json"}]},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ref: 'main', inputs: {plan: JSON.stringify($json.plan), plan_id: $json.plan_id, upload: true}}) }}",
+        "options": {}
+      },
+      "id": "dispatch",
+      "name": "Render (GitHub Actions)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1320, 0],
+      "notes": "Header auth credential: Authorization = Bearer <GitHub token with actions:write on the repo>."
+    },
+    {
+      "parameters": {"amount": 12, "unit": "minutes"},
+      "id": "wait",
+      "name": "Wait for the render",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [1540, 0]
+    },
+    {
+      "parameters": {
+        "url": "=https://services.leadconnectorhq.com/medias/files?altType=location&altId={{ $('Client config').item.json.ghlLocationId }}&type=file&sortBy=createdAt&sortOrder=desc&limit=5&query={{ $('Parse plan').item.json.plan_id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "highLevelOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {"parameters": [{"name": "Version", "value": "2021-07-28"}]},
+        "options": {}
+      },
+      "id": "find",
+      "name": "Find the uploaded reel",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1760, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://services.leadconnectorhq.com/social-media-posting/{{ $('Client config').item.json.ghlLocationId }}/posts",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "highLevelOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {"parameters": [{"name": "Version", "value": "2021-07-28"}]},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({accountIds: [], type: 'reel', status: 'draft', summary: $('Parse plan').item.json.plan.caption, media: [{url: $json.files[0].url, type: 'video/mp4'}]}) }}",
+        "options": {}
+      },
+      "id": "draft",
+      "name": "Draft post in Social Planner",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1980, 0],
+      "notes": "Fill accountIds with the client's connected Instagram, Facebook and YouTube account ids (GET /social-media-posting/{locationId}/accounts). Draft status so Ishika approves before it schedules."
+    }
+  ],
+  "connections": {
+    "Monday 6am": {"main": [[{"node": "Client config", "type": "main", "index": 0}]]},
+    "Client config": {"main": [[{"node": "Recent posts (HighLevel)", "type": "main", "index": 0}]]},
+    "Recent posts (HighLevel)": {"main": [[{"node": "Media library (HighLevel)", "type": "main", "index": 0}]]},
+    "Media library (HighLevel)": {"main": [[{"node": "Write the plan (Claude API)", "type": "main", "index": 0}]]},
+    "Write the plan (Claude API)": {"main": [[{"node": "Parse plan", "type": "main", "index": 0}]]},
+    "Parse plan": {"main": [[{"node": "Render (GitHub Actions)", "type": "main", "index": 0}]]},
+    "Render (GitHub Actions)": {"main": [[{"node": "Wait for the render", "type": "main", "index": 0}]]},
+    "Wait for the render": {"main": [[{"node": "Find the uploaded reel", "type": "main", "index": 0}]]},
+    "Find the uploaded reel": {"main": [[{"node": "Draft post in Social Planner", "type": "main", "index": 0}]]}
+  },
+  "settings": {"executionOrder": "v1"},
+  "active": false
+}

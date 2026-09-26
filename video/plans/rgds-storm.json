@@ -1,0 +1,115 @@
+{
+  "client": {
+    "short": "RGDS",
+    "name": "Residential Garage Door Service",
+    "phone": "(561) 747-3332",
+    "area": "Palm Beach \u00b7 Martin \u00b7 St. Lucie",
+    "brand": {
+      "primary": "#e11b14",
+      "accent": "#f5b62b",
+      "dark": "#141314",
+      "light": "#fbfbfb",
+      "font": "Albert Sans",
+      "logo": "clients/rgds/logo.png"
+    },
+    "close": {
+      "line": "Call (561) 747-3332",
+      "sub": "Same-day service \u00b7 Palm Beach to the Treasure Coast"
+    }
+  },
+  "format": "storm",
+  "seconds": 22,
+  "audio": {
+    "vo": "audio/rgds-storm-vo.mp3",
+    "music": "audio/rgds-storm-music.mp3",
+    "musicVolume": 0.28
+  },
+  "caption": "Your garage door is the biggest opening in your home, and in a storm it's the first thing to go. RGDS installs impact-rated doors built for Palm Beach weather. 20+ years, same-day service, family owned in Jupiter. Call (561) 747-3332.\n\n#HurricaneSeason #GarageDoor #JupiterFL #PalmBeach #ImpactDoors #StormPrep",
+  "scenes": [
+    {
+      "type": "image",
+      "src": "clients/rgds/site/FullSizeRender.jpg",
+      "fit": "cover",
+      "from": 0,
+      "to": 4.0,
+      "position": "60% 50%",
+      "lines": [
+        {
+          "at": 0.25,
+          "hold": 3.6,
+          "text": "The biggest opening in your home.",
+          "size": 84
+        }
+      ]
+    },
+    {
+      "type": "image",
+      "src": "clients/rgds/rgds-hurricane-1.png",
+      "from": 4.0,
+      "to": 7.8,
+      "position": "50% 22%",
+      "lines": [
+        {
+          "at": 0.2,
+          "hold": 3.4,
+          "text": "In a storm, it's the first to go.",
+          "size": 84,
+          "accent": true,
+          "y": 1340
+        }
+      ]
+    },
+    {
+      "type": "clip",
+      "src": "clients/rgds/reel-safe.mp4",
+      "start": 13.5,
+      "zoom": 1.5,
+      "from": 7.8,
+      "to": 12.5,
+      "position": "50% 12%",
+      "lines": [
+        {
+          "at": 0.2,
+          "hold": 2.5,
+          "text": "Impact-rated doors.",
+          "size": 92
+        },
+        {
+          "at": 2.75,
+          "hold": 1.9,
+          "text": "Built for Palm Beach weather.",
+          "size": 72,
+          "accent": true
+        }
+      ]
+    },
+    {
+      "type": "stats",
+      "src": "clients/rgds/reel-safe.mp4",
+      "start": 5.5,
+      "from": 12.5,
+      "to": 16.2,
+      "items": [
+        {
+          "big": "20+",
+          "small": "years on local doors"
+        },
+        {
+          "big": "Same day",
+          "small": "service"
+        },
+        {
+          "big": "Family",
+          "small": "owned, Jupiter FL"
+        }
+      ],
+      "zoom": 1.9,
+      "position": "50% 0%"
+    },
+    {
+      "type": "end",
+      "from": 16.2,
+      "to": 22
+    }
+  ]
+}

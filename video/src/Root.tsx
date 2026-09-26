@@ -4,6 +4,7 @@ import {WalkthroughReel, type Plan} from './WalkthroughReel';
 import {Spot, SPOT_FRAMES, type SpotAssets} from './Spot';
 import {PdSpot, PD_FRAMES, type PdAssets} from './PdSpot';
 import {Portfolio, PORTFOLIO_FRAMES, type PortfolioAssets} from './Portfolio';
+import {ClientReel, type ReelPlan} from './ClientReel';
 import board from './sample-board.json';
 
 // A stand-in plan so the composition registers before any capture has run.
@@ -59,8 +60,24 @@ async function portfolioAssets(): Promise<PortfolioAssets> {
 
 const emptyCap = {file: '', poster: ''};
 
+// A client's reel: the plan in public/plans/current.json says everything (scripts/produce.mjs writes it).
+const emptyReel: ReelPlan = {client: {short: '', name: '', phone: '', area: '', brand: {primary: '#fff', accent: '#fff', dark: '#000', light: '#fff', font: 'Inter', logo: ''}, close: {line: '', sub: ''}}, seconds: 1, audio: {}, scenes: []};
+
 export const Root: React.FC = () => (
   <>
+    <Composition
+      id="ClientReel"
+      component={ClientReel}
+      durationInFrames={30}
+      fps={30}
+      width={1080}
+      height={1920}
+      defaultProps={{plan: emptyReel}}
+      calculateMetadata={async () => {
+        const plan: ReelPlan = await fetch(staticFile('plans/current.json')).then((r) => r.json());
+        return {props: {plan}, durationInFrames: Math.round(plan.seconds * 30)};
+      }}
+    />
     <Composition
       id="Portfolio"
       component={Portfolio}
