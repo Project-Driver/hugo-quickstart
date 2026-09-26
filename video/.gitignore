@@ -2,3 +2,6 @@ node_modules/
 out/
 public/captures/
 public/plan.json
+# Client media pulled from live sites and the Social Planner; regenerate, do not publish.
+public/broll/*-brand.mp4
+public/social/

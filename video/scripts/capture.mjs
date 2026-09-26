@@ -2,11 +2,17 @@
 //
 //   node scripts/capture.mjs shots/pitboard.json            # builds the site and records it locally
 //   node scripts/capture.mjs shots/pitboard.json --live     # records the live URL instead
+//   node scripts/capture.mjs shots/portfolio.json --live   # shots carry their own full url (many sites)
 //
 // Each shot becomes public/captures/<id>.mp4 (1080 wide, 30 fps), a poster
 // jpg, and an entry in public/captures/meta.json with the extracted text and
 // the on-screen box of the element to punch in on. Frames are taken one by one
 // while the script scrolls, so timing is exact and the output is deterministic.
+//
+// Nothing on the page is hidden. Each page gets a settle period (site.settle or
+// shot.settle, seconds, default 3) and an optional slow preload walk before the
+// first frame, so lazy images, hero videos and scroll animations are already
+// in place when recording starts.
 
 import {chromium} from 'playwright-core';
 import {execFileSync, spawnSync} from 'node:child_process';
@@ -82,22 +88,23 @@ async function record(browser, base, shot, outDir, list) {
   const page = await ctx.newPage();
   // The session proxy occasionally drops a connect; try a few times before giving up.
   for (let attempt = 1; ; attempt++) {
-    try { await page.goto(base + shot.path, {waitUntil: 'networkidle', timeout: 60000}); break; }
+    try { await page.goto(shot.url || base + shot.path, {waitUntil: 'networkidle', timeout: 60000}); break; }
     catch (e) { if (attempt >= 4) throw e; await page.waitForTimeout(1500 * attempt); }
   }
   await page.addStyleTag({content: 'html{scroll-behavior:auto!important} *{caret-color:transparent!important}'});
-  // Product shots hide site chrome (the nav) so the phone shows the board, not a website.
-  const hide = [...(list.site.hideAll || []), ...(shot.hide || [])];
-  if (hide.length) await page.addStyleTag({content: `${hide.join(',')}{display:none!important;visibility:hidden!important}`});
-  const purge = () => page.evaluate((sel) => { if (sel) document.querySelectorAll(sel).forEach((e) => e.remove()); }, hide.join(','));
-  await purge();
   await page.evaluate(() => document.fonts.ready);
-  // Lazy-loaded images only fetch once scrolled into view: walk the whole page first, then return to the top.
+  // Nothing is hidden: the recording shows the page exactly as a visitor sees it, chat widgets and all.
+  // Give the page real time to finish loading before a single frame is taken (fonts, hero video, widgets).
+  const settle = (shot.settle ?? list.site.settle ?? 3) * 1000;
+  await page.waitForTimeout(settle);
+  // Lazy-loaded images and scroll-triggered animations only fire once scrolled into view: walk the whole
+  // page slowly first so everything has loaded and animated in, then return to the top and let it rest.
   if (shot.preload) {
     const total = await page.evaluate(() => document.documentElement.scrollHeight);
-    for (let y = 0; y < total; y += 400) { await page.evaluate((v) => window.scrollTo(0, v), y); await page.waitForTimeout(120); }
+    for (let y = 0; y < total; y += 300) { await page.evaluate((v) => window.scrollTo(0, v), y); await page.waitForTimeout(250); }
+    await page.waitForTimeout(1500);
     await page.evaluate(() => window.scrollTo(0, 0));
-    await page.waitForTimeout(1200);
+    await page.waitForTimeout(2500);
   }
   // Images that failed (a dropped request through the proxy) show their alt text; ask for them again.
   for (let round = 0; round < 3; round++) {
@@ -109,14 +116,14 @@ async function record(browser, base, shot, outDir, list) {
     if (!broken) break;
     await page.waitForTimeout(2500);
   }
-  await purge();
+  // Wait until every image on the page has finished loading (up to 10 s) so nothing pops in mid-shot.
+  await page.waitForFunction(() => [...document.images].every((i) => i.complete), null, {timeout: 10000}).catch(() => {});
 
   const frameDir = join(outDir, `${shot.id}.frames`);
   rmSync(frameDir, {recursive: true, force: true});
   mkdirSync(frameDir);
   let n = 0;
   const snap = async () => {
-    if (hide.length) await purge(); // widgets re-inject themselves on timers
     await page.screenshot({path: join(frameDir, `${String(n++).padStart(5, '0')}.jpg`), type: 'jpeg', quality: 92});
   };
   const scrollY = () => page.evaluate(() => window.scrollY);
@@ -147,8 +154,8 @@ async function record(browser, base, shot, outDir, list) {
 
   for (const a of shot.actions) {
     if (a.wait) for (let i = 0; i < Math.round(a.wait * FPS); i++) await snap();
-    else if (a.scrollTo) await glide(await targetY(a.scrollTo, a.block), a.seconds ?? 1);
-    else if (a.scrollBy) await glide((await scrollY()) + a.scrollBy, a.seconds ?? 1);
+    else if (a.scrollTo) await glide(await targetY(a.scrollTo, a.block), a.seconds ?? 2);
+    else if (a.scrollBy) await glide((await scrollY()) + a.scrollBy, a.seconds ?? 2);
     else if (a.click) { await page.click(a.click); await page.waitForTimeout(300); }
   }
 
@@ -188,7 +195,7 @@ async function record(browser, base, shot, outDir, list) {
   execFileSync(FFMPEG, ['-y', '-loglevel', 'error', '-i', join(frameDir, '00000.jpg'), '-vf', 'scale=540:-1', join(outDir, `${shot.id}.jpg`)]);
   rmSync(frameDir, {recursive: true, force: true});
 
-  return {file: `captures/${shot.id}.mp4`, poster: `captures/${shot.id}.jpg`, frames: n, seconds: n / FPS, focus, text, path: shot.path};
+  return {file: `captures/${shot.id}.mp4`, poster: `captures/${shot.id}.jpg`, frames: n, seconds: n / FPS, focus, text, path: shot.url || shot.path};
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });

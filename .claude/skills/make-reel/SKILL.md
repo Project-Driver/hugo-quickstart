@@ -36,3 +36,12 @@ Everything lives in `video/`. Run commands from there.
 - Hugo 0.101 is installed by npm into `video/node_modules/.bin/hugo`, matching `netlify.toml`.
 - The shot list expects the site at the repo root (the `claude/project-driver-revenue-6fkwz3` branch). From another checkout, set `SITE_DIR=/path/to/site`.
 - Recording a live site needs its domain allowed in the environment's network settings.
+
+## Cinematic spots (the TV-ad style)
+
+The walkthrough reel is the fast, data-driven cut. The spots (`src/Spot.tsx`, `src/PdSpot.tsx`, `src/Portfolio.tsx`) are the premium ones: a recorded read, type that lands on the voice, the phone as a lit object, real brand films, and a music bed. They share `src/cinema.tsx`.
+
+- **Recording shows everything.** Nothing on the page is hidden any more (no `hideAll`, no `hide`): chat widgets, search buttons and headers stay in the shot, because that is what a visitor sees. Each page gets `settle` seconds (site or shot level, default 3) before the first frame, `preload: true` walks the page slowly so lazy images and scroll animations have already fired, and scrolls default to 2 s. Keep scrolls slow (5–6 s per screen) and put a `wait` after every scroll so the animations finish on camera.
+- **Many sites in one list.** A shot can carry a full `url` instead of a `path`, so `shots/portfolio.json` records several live sites in one run (`--live`).
+- **Re-time the read to the picture.** Record the read once (ElevenLabs, Russ), map its pauses with `ffmpeg silencedetect`, write `spots/<name>-vo.json` (`from`/`to` seconds in the take, `at` seconds in the film) and run `node scripts/retime-vo.mjs out/takes/<take>.mp3 spots/<name>-vo.json public/audio/<name>-vo.mp3`. The scene beats `T` in the composition match the `at` values, so the voice never rushes the picture and the picture never waits on the voice.
+- **Portfolio** (`Portfolio`): live scrolls of the sites we built, the posts we published (`public/social/`, pulled from the HighLevel Social Planner), the Bottima reel, the RGDS and Project Driver brand films (`public/broll/`), and the numbers from the Results page and the monthly SEO report. Real numbers only, with their source on screen.

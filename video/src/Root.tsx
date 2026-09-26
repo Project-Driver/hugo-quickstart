@@ -3,6 +3,7 @@ import {PitBoardReel, REEL_FRAMES} from './PitBoardReel';
 import {WalkthroughReel, type Plan} from './WalkthroughReel';
 import {Spot, SPOT_FRAMES, type SpotAssets} from './Spot';
 import {PdSpot, PD_FRAMES, type PdAssets} from './PdSpot';
+import {Portfolio, PORTFOLIO_FRAMES, type PortfolioAssets} from './Portfolio';
 import board from './sample-board.json';
 
 // A stand-in plan so the composition registers before any capture has run.
@@ -40,8 +41,36 @@ async function pdAssets(): Promise<PdAssets> {
   };
 }
 
+// The portfolio spot: live scrolls from shots/portfolio.json, the brand films and
+// the Bottima reel in public/broll and public/social, the posts we published, and
+// the re-timed read in public/audio/pf-vo.mp3.
+async function portfolioAssets(): Promise<PortfolioAssets> {
+  const meta = await fetch(staticFile('captures/meta.json')).then((r) => r.json());
+  const has = async (p: string) => (await fetch(staticFile(p), {method: 'HEAD'})).ok;
+  const opt = async (p: string) => ((await has(p)) ? p : undefined);
+  const cap = (id: string) => ({file: meta.shots[id].file, poster: meta.shots[id].poster});
+  return {
+    captures: {pd: cap('pf-pd-home'), pdResults: cap('pf-pd-results'), rgds: cap('pf-rgds'), hmr: cap('pf-hmr'), bottima: cap('pf-bottima'), width: meta.width, height: meta.height},
+    films: {rgds: await opt('broll/rgds-brand.mp4'), pd: await opt('broll/pd-brand.mp4'), bottimaReel: await opt('social/bottima-reel.mp4')},
+    social: ['social/rgds-before-after.png', 'social/bottima-scalp-1.png', 'social/pd-bottleneck.png', 'social/rgds-hurricane-1.png', 'social/bottima-aftercare.png', 'social/pd-soulverve-1.png', 'social/rgds-5star.png', 'social/bottima-beard.png', 'social/pd-three-systems.png', 'social/rgds-checkup-1.png', 'social/bottima-scalp-2.png', 'social/pd-friction.png'],
+    audio: {vo: await opt('audio/pf-vo.mp3'), music: await opt('audio/pf-music.mp3')},
+  };
+}
+
+const emptyCap = {file: '', poster: ''};
+
 export const Root: React.FC = () => (
   <>
+    <Composition
+      id="Portfolio"
+      component={Portfolio}
+      durationInFrames={PORTFOLIO_FRAMES}
+      fps={30}
+      width={1080}
+      height={1920}
+      defaultProps={{assets: {captures: {pd: emptyCap, pdResults: emptyCap, rgds: emptyCap, hmr: emptyCap, bottima: emptyCap, width: 1080, height: 2336}, films: {}, social: [], audio: {}} as PortfolioAssets}}
+      calculateMetadata={async () => ({props: {assets: await portfolioAssets()}})}
+    />
     <Composition
       id="PdSpot"
       component={PdSpot}
