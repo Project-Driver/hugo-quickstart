@@ -53,3 +53,14 @@ The walkthrough reel is the fast, data-driven cut. The spots (`src/Spot.tsx`, `s
 - Sound effects: `node_type: sfx`, `eleven_text_to_sound_v2`, short whooshes and ticks for cuts and count-ups.
 - Cost so far per spot: about 15 cents of voice, 18 cents of music.
 - Check the mix before sending: decode to WAV and measure RMS (Remotion's ffmpeg has no `volumedetect`). The in-app preview plays muted; the file itself carries the track.
+
+## Client reels (the production line)
+
+A client's reel is the client's spot in the client's brand. Project Driver never appears in frame; a "built by" credit belongs in the caption at most. Their reels are made from their world: their photos, their reels, their posts, their site. Never generated footage of their shop or property.
+
+- **Config** `clients/<id>.json`: brand (colors, font, logo), voice, goal, audience, proof points the site actually makes, `neverSay`, close line, cadence, formats, sources (HighLevel location id, media library, Social Planner, film).
+- **Plan** `plans/<id>-<format>.json`: everything the render needs. Scenes are `clip` (9:16 video, `zoom` + `position` crop away baked captions), `image` (`fit: cover` full bleed, or `contain` over a blurred fill), `stats` (proof row over dimmed footage), `end` (logo, phone, area). Lines are the read, timed from the scene start. `script` + `phrases[].at` let the producer record and re-time the voice; `musicPrompt` gets a bed; `caption` is the post copy.
+- **Produce** `node scripts/produce.mjs plans/<plan>.json [--upload]` fetches media by URL, records the read (ELEVENLABS_API_KEY), re-times it, makes music, renders `ClientReel`, pulls a check frame per cut, and with `--upload` puts the mp4 in the client's HighLevel media library (HIGHLEVEL_API_KEY). Keys come from the environment only.
+- **Worker** `.github/workflows/reel.yml` runs the producer on GitHub Actions from a `workflow_dispatch` with the plan JSON. **n8n** imports `video/n8n/client-reel-weekly.json`: schedule → HighLevel inventory → Claude API writes the plan → dispatch → wait → find the upload → draft post in the Social Planner for approval.
+- **Footage lessons.** RGDS's brand film is typographic, so it cannot be cropped into cutaways; use the site photos and the reels in the media library instead. InVideo reels carry a caption band around 60–80% down; `zoom: 1.5`, `position: '50% 10%'` keeps it out of frame.
+- Check every cut before sending. Baked captions, a wrapped end card, and a caption that collides with a still's own label were the faults on the first pass.
