@@ -51,7 +51,7 @@ async function portfolioAssets(): Promise<PortfolioAssets> {
   const cap = (id: string) => ({file: meta.shots[id].file, poster: meta.shots[id].poster});
   return {
     captures: {pd: cap('pf-pd-home'), pdResults: cap('pf-pd-results'), rgds: cap('pf-rgds'), hmr: cap('pf-hmr'), bottima: cap('pf-bottima'), width: meta.width, height: meta.height},
-    films: {rgds: await opt('broll/rgds-brand.mp4'), pd: await opt('broll/pd-brand.mp4'), bottimaReel: await opt('social/bottima-reel.mp4')},
+    films: {rgds: await opt('broll/rgds-brand.mp4'), pd: await opt('broll/pd-brand.mp4'), bottimaReel: await opt('social/bottima-reel.mp4'), massjugoReel: await opt('social/massjugo-reel.mp4')},
     social: ['social/rgds-before-after.png', 'social/bottima-scalp-1.png', 'social/pd-bottleneck.png', 'social/rgds-hurricane-1.png', 'social/bottima-aftercare.png', 'social/pd-soulverve-1.png', 'social/rgds-5star.png', 'social/bottima-beard.png', 'social/pd-three-systems.png', 'social/rgds-checkup-1.png', 'social/bottima-scalp-2.png', 'social/pd-friction.png'],
     audio: {vo: await opt('audio/pf-vo.mp3'), music: await opt('audio/pf-music.mp3')},
   };

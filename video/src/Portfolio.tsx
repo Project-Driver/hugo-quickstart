@@ -9,7 +9,7 @@ import {C, sans, mono, clamp, sec, Grain, Vignette, Dawn, Camera, Line, Phone, S
 type Capture = {file: string; poster: string};
 export type PortfolioAssets = {
   captures: {pd: Capture; pdResults: Capture; rgds: Capture; hmr: Capture; bottima: Capture; width: number; height: number};
-  films: {rgds?: string; pd?: string; bottimaReel?: string};
+  films: {rgds?: string; pd?: string; bottimaReel?: string; massjugoReel?: string};
   social: string[];
   audio: {vo?: string; music?: string};
 };
@@ -131,15 +131,17 @@ const Social: React.FC<{assets: PortfolioAssets}> = ({assets}) => {
           })}
         </div>
       </AbsoluteFill>
-      {assets.films.bottimaReel ? (
-        <AbsoluteFill style={{opacity: reelIn, transform: `scale(${0.94 + reelIn * 0.06})`}}>
-          <Phone rx={5} ry={-10} glow={0.45} sweepAt={reelAt + 10} width={580} y={-120}>
-            <OffthreadVideo src={staticFile(assets.films.bottimaReel)} muted startFrom={sec(1)} style={{width: 540, height: 540 * (1920 / 1080), objectFit: 'cover'}} />
+      {/* Two reels we cut, side by side: Bottima and Mass Jugo. */}
+      {[{src: assets.films.bottimaReel, x: -230, ry: 16, rx: 4}, {src: assets.films.massjugoReel, x: 230, ry: -16, rx: 4}].map((r, i) => r.src ? (
+        <AbsoluteFill key={i} style={{opacity: reelIn, transform: `translateX(${r.x}px) scale(${0.94 + reelIn * 0.06})`}}>
+          <Phone rx={r.rx} ry={r.ry} glow={0.4} sweepAt={reelAt + 10 + i * 12} width={470} y={-130}>
+            <OffthreadVideo src={staticFile(r.src)} muted startFrom={sec(1)} style={{width: 430, height: 430 * (1920 / 1080), objectFit: 'cover'}} />
           </Phone>
         </AbsoluteFill>
-      ) : null}
+      ) : null)}
       <Line at={0.15} hold={3.0} size={68} y={1500}><b style={{fontWeight: 800}}>The posts.</b></Line>
       <Line at={3.25} hold={2.7} size={68} y={1500}><b style={{fontWeight: 800}}>The reels.</b></Line>
+      <Line at={3.4} hold={2.5} size={30} y={1590} color={C.muted}><span style={{fontFamily: mono, letterSpacing: 1}}>bottima · mass jugo</span></Line>
     </AbsoluteFill>
   );
 };
