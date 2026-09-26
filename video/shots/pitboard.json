@@ -139,6 +139,70 @@
       "extract": {
         "startHeadline": "h1"
       }
+    },
+    {
+      "id": "board-product",
+      "path": "/sample/",
+      "hide": [
+        ".nav",
+        ".section > .wrap > h1",
+        ".section > .wrap > p"
+      ],
+      "seconds": 7,
+      "actions": [
+        {
+          "scrollTo": ".board .stats",
+          "seconds": 1.2,
+          "block": "start"
+        },
+        {
+          "wait": 1
+        },
+        {
+          "scrollTo": ".board .dothis",
+          "seconds": 1.4
+        },
+        {
+          "wait": 0.8
+        },
+        {
+          "scrollTo": ".board .table",
+          "seconds": 1.4,
+          "block": "start"
+        },
+        {
+          "wait": 1.2
+        }
+      ],
+      "focus": ".board .table",
+      "extract": {}
+    },
+    {
+      "id": "money-product",
+      "path": "/sample/",
+      "hide": [
+        ".nav"
+      ],
+      "seconds": 5,
+      "actions": [
+        {
+          "scrollTo": ".board .table",
+          "seconds": 0.8,
+          "block": "start"
+        },
+        {
+          "wait": 1.4
+        },
+        {
+          "scrollBy": 30,
+          "seconds": 1.6
+        },
+        {
+          "wait": 1.2
+        }
+      ],
+      "focus": ".board .table li:first-child",
+      "extract": {}
     }
   ]
 }

@@ -75,6 +75,8 @@ async function record(browser, base, shot, outDir) {
   const page = await ctx.newPage();
   await page.goto(base + shot.path, {waitUntil: 'networkidle'});
   await page.addStyleTag({content: 'html{scroll-behavior:auto!important} *{caret-color:transparent!important}'});
+  // Product shots hide site chrome (the nav) so the phone shows the board, not a website.
+  if (shot.hide?.length) await page.addStyleTag({content: `${shot.hide.join(',')}{display:none!important}`});
   await page.evaluate(() => document.fonts.ready);
 
   const frameDir = join(outDir, `${shot.id}.frames`);
