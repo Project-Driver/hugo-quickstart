@@ -45,3 +45,11 @@ The walkthrough reel is the fast, data-driven cut. The spots (`src/Spot.tsx`, `s
 - **Many sites in one list.** A shot can carry a full `url` instead of a `path`, so `shots/portfolio.json` records several live sites in one run (`--live`).
 - **Re-time the read to the picture.** Record the read once (ElevenLabs, Russ), map its pauses with `ffmpeg silencedetect`, write `spots/<name>-vo.json` (`from`/`to` seconds in the take, `at` seconds in the film) and run `node scripts/retime-vo.mjs out/takes/<take>.mp3 spots/<name>-vo.json public/audio/<name>-vo.mp3`. The scene beats `T` in the composition match the `at` values, so the voice never rushes the picture and the picture never waits on the voice.
 - **Portfolio** (`Portfolio`): live scrolls of the sites we built, the posts we published (`public/social/`, pulled from the HighLevel Social Planner), the Bottima reel, the RGDS and Project Driver brand films (`public/broll/`), and the numbers from the Results page and the monthly SEO report. Real numbers only, with their source on screen.
+
+## Voice, music and sound (ElevenLabs connector)
+
+- Flow `XQGiaMU98CYb25YCMc5J` holds every take. Voices: Russ `t0eCaS57KWbQQc1wRkah` (deep documentary narrator, used on every spot so far), Alex `qkEGWkCMgKgN6hNFFX4p`. Model `eleven_v3`; ask for two takes, pick the one with cleaner pauses.
+- Music: `creative_generate_in_flow` with `node_type: music`, `eleven_music_v2`, instrumental, describe the arc in seconds (build, swell, resolve). About 18 cents for 45 s.
+- Sound effects: `node_type: sfx`, `eleven_text_to_sound_v2`, short whooshes and ticks for cuts and count-ups.
+- Cost so far per spot: about 15 cents of voice, 18 cents of music.
+- Check the mix before sending: decode to WAV and measure RMS (Remotion's ffmpeg has no `volumedetect`). The in-app preview plays muted; the file itself carries the track.
