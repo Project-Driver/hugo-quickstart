@@ -44,11 +44,11 @@ const sec = (s: number) => Math.round(s * FPS);
 const T = {
   open: [0, 3],
   buzz: [3, 6],
-  text: [6, 10],
-  board: [10, 15],
-  money: [15, 20],
-  dawn: [20, 24],
-  logo: [24, 30],
+  text: [6, 10.8],
+  board: [10.8, 17],
+  money: [17, 22.4],
+  dawn: [22.4, 24.7],
+  logo: [24.7, 30],
 } as const;
 export const SPOT_FRAMES = sec(30);
 
@@ -158,15 +158,15 @@ const Screen: React.FC<{src: string; width: number; captureWidth: number; captur
 };
 
 // A b-roll slot: a filmed or generated clip if one exists, otherwise a lit, abstract stand-in.
-const BRoll: React.FC<{src?: string; fallback: React.ReactNode}> = ({src, fallback}) => (
-  <AbsoluteFill>{src ? <OffthreadVideo src={staticFile(src)} muted style={{width: '100%', height: '100%', objectFit: 'cover'}} /> : fallback}</AbsoluteFill>
+const BRoll: React.FC<{src?: string; fallback: React.ReactNode; position?: string}> = ({src, fallback, position = '50% 50%'}) => (
+  <AbsoluteFill>{src ? <OffthreadVideo src={staticFile(src)} muted style={{width: '100%', height: '100%', objectFit: 'cover', objectPosition: position}} /> : fallback}</AbsoluteFill>
 );
 
 // 0–6: the phone face-down on a dashboard, dawn coming, one buzz.
 const Open: React.FC<{board: Board; assets: SpotAssets}> = ({board, assets}) => {
   const f = useCurrentFrame();
   const {fps} = useVideoConfig();
-  const buzzAt = sec(3.4);
+  const buzzAt = sec(3.9);
   const buzz = f >= buzzAt && f < buzzAt + 14 ? Math.sin((f - buzzAt) * 1.9) * 5 : 0;
   const lit = spring({frame: f - buzzAt, fps, config: {damping: 30}});
   const dawn = interpolate(f, [0, sec(6)], [0.08, 0.32], clamp);
@@ -174,6 +174,7 @@ const Open: React.FC<{board: Board; assets: SpotAssets}> = ({board, assets}) => 
     <AbsoluteFill style={{background: C.bg}}>
       <BRoll
         src={assets.broll.dashboard}
+        position="46% 58%"
         fallback={
           <AbsoluteFill>
             {/* a dashboard: a dark curved surface with the horizon's first light behind it */}
@@ -182,6 +183,7 @@ const Open: React.FC<{board: Board; assets: SpotAssets}> = ({board, assets}) => 
           </AbsoluteFill>
         }
       />
+      {assets.broll.dashboard ? null : (
       <Camera length={sec(6)} from={1.08} to={1.16}>
         <AbsoluteFill style={{justifyContent: 'center', alignItems: 'center', perspective: 2000}}>
           {/* the phone, face down: only the light leaking out around its edges tells us it woke up */}
@@ -196,8 +198,9 @@ const Open: React.FC<{board: Board; assets: SpotAssets}> = ({board, assets}) => 
           </div>
         </AbsoluteFill>
       </Camera>
-      <Line at={0.6} hold={2.6} size={58}>Yesterday, <b style={{fontWeight: 800}}>{words(board.lap.callsIn)} people</b> called you.</Line>
-      <Line at={3.6} hold={2.4} size={58}>
+      )}
+      <Line at={1.0} hold={2.7} size={58}>Yesterday, <b style={{fontWeight: 800}}>{words(board.lap.callsIn)} people</b> called you.</Line>
+      <Line at={4.0} hold={2.0} size={58}>
         <b style={{fontWeight: 800, color: C.red}}>{words(board.lap.missed)}</b> you never got to.
       </Line>
     </AbsoluteFill>
@@ -248,8 +251,8 @@ const Text: React.FC<{board: Board; assets: SpotAssets}> = ({board, assets}) => 
           </div>
         </Phone>
       </Camera>
-      <Line at={0.4} hold={1.9} size={58}>One of them still needs you.</Line>
-      <Line at={2.4} hold={1.6} size={58}>This is her number.</Line>
+      <Line at={0.7} hold={2.3} size={58}>One of them still needs you.</Line>
+      <Line at={3.1} hold={1.7} size={58}>This is her number.</Line>
     </AbsoluteFill>
   );
 };
@@ -266,8 +269,8 @@ const BoardScene: React.FC<{assets: SpotAssets}> = ({assets}) => {
           <Screen src={assets.captures.board} width={560} captureWidth={assets.captures.width} captureHeight={assets.captures.height} startFrom={sec(1.2)} />
         </Phone>
       </Camera>
-      <Line at={0.3} hold={2.4} size={54}>Pit Board reads your phone, your inbox, your calendar.</Line>
-      <Line at={2.9} hold={2.1} size={54}>
+      <Line at={0.7} hold={3.7} size={54}>Pit Board reads your phone, your inbox, your calendar.</Line>
+      <Line at={4.5} hold={1.7} size={54}>
         Every morning at <b style={{fontWeight: 800, color: C.yellow}}>seven.</b>
       </Line>
     </AbsoluteFill>
@@ -278,7 +281,7 @@ const BoardScene: React.FC<{assets: SpotAssets}> = ({assets}) => {
 const MoneyScene: React.FC<{board: Board; assets: SpotAssets}> = ({board, assets}) => {
   const f = useCurrentFrame();
   const {fps} = useVideoConfig();
-  const tapAt = sec(3.4);
+  const tapAt = sec(3.3);
   const tap = spring({frame: f - tapAt, fps, config: {damping: 12, mass: 0.5}});
   const fx = assets.captures.moneyFocus;
   return (
@@ -301,10 +304,10 @@ const MoneyScene: React.FC<{board: Board; assets: SpotAssets}> = ({board, assets
           ) : null}
         </Phone>
       </Camera>
-      <Line at={0.3} hold={2.5} size={54}>
+      <Line at={0.6} hold={2.4} size={54}>
         Every dollar sitting on the table. <b style={{fontWeight: 800, color: C.yellow}}>${board.unpaidTotal.toLocaleString('en-US')}</b> of it overdue.
       </Line>
-      <Line at={3.1} hold={1.9} size={54}>One tap to go get it.</Line>
+      <Line at={3.0} hold={2.4} size={54}>One tap to go get it.</Line>
     </AbsoluteFill>
   );
 };
@@ -330,7 +333,7 @@ const DawnScene: React.FC<{assets: SpotAssets}> = ({assets}) => {
       <Camera length={sec(4)} from={1} to={1.05}>
         <AbsoluteFill />
       </Camera>
-      <Line at={1.0} hold={2.8} size={72} y={1460}>
+      <Line at={0.5} hold={1.8} size={72} y={1460}>
         <b style={{fontWeight: 800}}>Before the first job.</b>
       </Line>
     </AbsoluteFill>
