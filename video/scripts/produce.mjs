@@ -113,13 +113,17 @@ const shell = process.env.CHROME_HEADLESS_SHELL || '/opt/pw-browsers/chromium_he
 const renderArgs = ['remotion', 'render', 'ClientReel', out, '--log=error', '--concurrency=2', ...(existsSync(shell) ? [`--browser-executable=${shell}`] : [])];
 execFileSync('npx', renderArgs, {stdio: 'inherit'});
 log(`rendered ${out}`);
+// Remotion writes full-range color; the platforms want limited-range yuv420p with the index up front.
+const reel = out.replace(/\.mp4$/, '-reel.mp4');
+execFileSync(ffmpeg, ['-y', '-loglevel', 'error', '-i', out, '-vf', 'scale=in_range=full:out_range=limited', '-color_range', 'tv', '-c:v', 'libx264', '-profile:v', 'high', '-level', '4.0', '-pix_fmt', 'yuv420p', '-crf', '18', '-preset', 'medium', '-r', '30', '-c:a', 'aac', '-b:a', '192k', '-ar', '48000', '-movflags', '+faststart', reel]);
+log(`reel file ${reel}`);
 
 // 5. Check frames at every cut.
 const frameDir = `out/${id}-frames`;
 mkdirSync(frameDir, {recursive: true});
 for (const s of plan.scenes) {
   const t = (s.from + Math.min(1.2, (s.to - s.from) / 2)).toFixed(2);
-  execFileSync(ffmpeg, ['-y', '-loglevel', 'error', '-ss', t, '-i', out, '-frames:v', '1', '-vf', 'scale=360:-1', join(frameDir, `${t}s.jpg`)]);
+  execFileSync(ffmpeg, ['-y', '-loglevel', 'error', '-ss', t, '-i', reel, '-frames:v', '1', '-vf', 'scale=360:-1', join(frameDir, `${t}s.jpg`)]);
 }
 log(`check frames in ${frameDir}`);
 
@@ -129,7 +133,7 @@ if (args.includes('--upload')) {
   const loc = plan.client.ghlLocationId;
   if (!key || !loc) throw new Error('HIGHLEVEL_API_KEY and plan.client.ghlLocationId are needed for --upload');
   const form = new FormData();
-  form.set('file', new Blob([readFileSync(out)], {type: 'video/mp4'}), basename(out));
+  form.set('file', new Blob([readFileSync(reel)], {type: 'video/mp4'}), basename(reel));
   form.set('name', `${id}.mp4`);
   const res = await fetch(`https://services.leadconnectorhq.com/medias/upload-file?altType=location&altId=${loc}`, {
     method: 'POST', headers: {Authorization: `Bearer ${key}`, Version: '2021-07-28'}, body: form,

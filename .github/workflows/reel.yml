@@ -70,6 +70,6 @@ jobs:
         with:
           name: ${{ inputs.plan_id }}
           path: |
-            video/out/${{ inputs.plan_id }}.mp4
+            video/out/${{ inputs.plan_id }}-reel.mp4
             video/out/${{ inputs.plan_id }}-frames/
           retention-days: 14
